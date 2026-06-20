@@ -1017,16 +1017,17 @@ export default function App() {
 
       {/* FOOTER */}
       <footer
-        className={`w-full py-16 px-4 sm:px-6 lg:px-20 border-t transition-colors duration-300 ${isDarkMode ? "bg-[#112E81] border-slate-900" : "bg-white border-blue-100"}`}
+        className={`w-full py-14 sm:py-16 px-4 sm:px-6 lg:px-20 border-t transition-colors duration-300 ${isDarkMode ? "bg-[#112E81] border-slate-900" : "bg-white border-blue-100"}`}
       >
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="space-y-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
+          {/* Kolom 1: Profil Brand */}
+          <div className="col-span-2 md:col-span-1 space-y-4">
             <div
               className={`font-bold text-sm font-mono flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}
             >
               <span className="bg-blue-600 text-white px-2 py-0.5 rounded font-black text-xs">
                 X
-              </span>{" "}
+              </span>
               XAF7 Studio
             </div>
             <p
@@ -1035,6 +1036,8 @@ export default function App() {
               {t[lang].footer.desc}
             </p>
           </div>
+
+          {/* Kolom 2: Navigasi */}
           <div>
             <h4
               className={`text-xs font-black uppercase tracking-wider mb-4 ${isDarkMode ? "text-white" : "text-slate-900"}`}
@@ -1070,6 +1073,8 @@ export default function App() {
               </li>
             </ul>
           </div>
+
+          {/* Kolom 3: Kontak & Git */}
           <div>
             <h4
               className={`text-xs font-black uppercase tracking-wider mb-4 ${isDarkMode ? "text-white" : "text-slate-900"}`}
@@ -1077,32 +1082,52 @@ export default function App() {
               {t[lang].footer.contactTitle}
             </h4>
             <div
-              className={`text-[11px] font-semibold space-y-2 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}
+              className={`text-[11px] font-semibold space-y-2.5 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}
             >
-              <p>kontak@xaf7studio.com</p>
-              <p>{t[lang].footer.loc}</p>
+              <p>✉️ sskorpion642@gmail.com</p>
+              <p>📍 {t[lang].footer.loc}</p>
+              <div className="pt-1">
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hover:text-blue-500 inline-flex items-center gap-1.5 transition-colors"
+                >
+                  📁 GitHub
+                </a>
+              </div>
             </div>
           </div>
-          <div>
-            <h4
-              className={`text-xs font-black uppercase tracking-wider mb-4 ${isDarkMode ? "text-white" : "text-slate-900"}`}
-            >
-              {t[lang].footer.infoTitle}
-            </h4>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                placeholder={t[lang].footer.holderEmail}
-                className={`w-full text-[11px] p-2 rounded-lg border outline-none ${isDarkMode ? "bg-[#0b0e14] border-slate-800 text-white" : "bg-white border-blue-100 text-slate-900 focus:border-blue-500"}`}
-              />
-              <button className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 transition-all">
-                ➔
-              </button>
+
+          {/* Kolom 4: Hubungi via WA */}
+          <div className="flex flex-col justify-between h-full">
+            <div>
+              <h4
+                className={`text-xs font-black uppercase tracking-wider mb-3 ${isDarkMode ? "text-white" : "text-slate-900"}`}
+              >
+                Konsultasi Cepat
+              </h4>
+              <p
+                className={`text-[11px] mb-4 leading-relaxed font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}
+              >
+                Punya konsep aplikasi atau butuh sistem kustom? Diskusikan
+                langsung sekarang.
+              </p>
             </div>
+            <a
+              href="https://wa.me/6283129195727"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-xs font-bold py-3 px-5 rounded-full w-full transition-all duration-300 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transform hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <span className="text-sm">💬</span> Chat via WhatsApp
+            </a>
           </div>
-        </div>
+        </div>{" "}
+        {/* <-- Penutup grid utama yang sebelumnya hilang */}
+        {/* Baris Hak Cipta & Ketentuan */}
         <div
-          className={`max-w-7xl mx-auto mt-12 pt-8 border-t flex flex-col md:flex-row justify-between items-center text-[10px] font-bold gap-4 ${isDarkMode ? "border-slate-900 text-slate-500" : "border-slate-100 text-slate-600"}`}
+          className={`max-w-7xl mx-auto mt-10 sm:mt-12 pt-6 sm:pt-8 border-t flex flex-col md:flex-row justify-between items-center text-[10px] font-bold gap-3 sm:gap-4 ${isDarkMode ? "border-slate-900 text-slate-500" : "border-slate-100 text-slate-600"}`}
         >
           <p>
             © {new Date().getFullYear()} {t[lang].footer.rights}
@@ -1117,7 +1142,6 @@ export default function App() {
           </div>
         </div>
       </footer>
-
       {/* CHATBOT */}
       <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 font-sans">
         {isChatOpen ? (
