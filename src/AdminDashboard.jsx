@@ -9,9 +9,11 @@ import {
   Loader2,
   Briefcase,
   UserCheck,
-  Search,
   Sun,
   Moon,
+  Menu,
+  X,
+  Image,
 } from "lucide-react";
 import { supabase } from "./supabaseClient";
 
@@ -21,10 +23,16 @@ export default function AdminDashboard({
   testimonials,
   setTestimonials,
   onLogout,
-  isDarkMode,
+  isDarkMode: externalDarkMode,
 }) {
-  // State untuk melacak tab mana yang sedang aktif
-  const [activeTab, setActiveTab] = useState("dashboard"); // Opsi: "dashboard", "projects", "testimonials"
+  // State manajemen navigasi tab & responsive mobile menu
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // State lokal untuk memastikan Dark Mode bertransisi jika parent belum mengikat fungsi state global
+  const [localDarkMode, setLocalDarkMode] = useState(false);
+  const isDark =
+    externalDarkMode !== undefined ? externalDarkMode : localDarkMode;
 
   const [projForm, setProjForm] = useState({
     title: "",
@@ -36,12 +44,14 @@ export default function AdminDashboard({
     color: "from-blue-600 to-indigo-700",
   });
 
+  // Menambahkan field avatar / foto web ke dalam testimoni
   const [testiForm, setTestiForm] = useState({
     quote: "",
     name: "",
     company: "",
     tags: "SaaS Enterprise",
     rating: "5.0",
+    avatar_url: "",
   });
 
   const [savingProj, setSavingProj] = useState(false);
@@ -114,6 +124,7 @@ export default function AdminDashboard({
       company: testiForm.company,
       tags: testiForm.tags,
       rating: testiForm.rating,
+      avatar_url: testiForm.avatar_url, // Menyimpan link foto web / klien ke database
     };
 
     const { data, error } = await supabase
@@ -135,6 +146,7 @@ export default function AdminDashboard({
       company: "",
       tags: "SaaS Enterprise",
       rating: "5.0",
+      avatar_url: "",
     });
     alert("Testimoni berhasil ditambahkan!");
   };
@@ -153,56 +165,51 @@ export default function AdminDashboard({
 
   return (
     <div
-      className={`w-full min-h-screen font-sans flex ${isDarkMode ? "bg-[#232333] text-[#cfcfe0]" : "bg-[#f5f5f9] text-[#697a8d]"}`}
+      className={`w-full min-h-screen font-sans flex flex-col lg:flex-row transition-colors duration-300 ${isDark ? "bg-[#232333] text-[#cfcfe0]" : "bg-[#f5f5f9] text-[#697a8d]"}`}
     >
-      {/* ================= SIDEBAR NAVIGASI ================= */}
-      <aside
-        className={`w-64 min-h-screen hidden lg:flex flex-col shrink-0 border-r ${isDarkMode ? "bg-[#2b2c40] border-[#363853]" : "bg-white border-slate-200"}`}
-      >
-        {/* Brand Header dengan icon.png */}
-        <div className="h-16 flex items-center gap-3 px-6">
+      {/* ================= SIDEBAR NAVIGASI (DESKTOP) ================= */}
+      <aside className="w-64 min-h-screen hidden lg:flex flex-col shrink-0 bg-blue-600 text-white shadow-xl">
+        {/* Brand Header */}
+        <div className="h-16 flex items-center gap-3 px-6 border-b border-white/10">
           <img
             src="/icon.png"
             alt="Logo Xaf"
-            className="w-7 h-7 object-contain rounded-lg shadow-sm"
+            className="w-7 h-7 object-contain bg-white/20 p-0.5 rounded-lg shadow-sm"
             onError={(e) => {
-              // Fallback jika file icon.png belum ditaruh di folder public
               e.target.style.display = "none";
             }}
           />
-          <span
-            className={`text-xl font-bold tracking-tight ${isDarkMode ? "text-white" : "text-[#566a7f]"}`}
-          >
+          <span className="text-xl font-bold tracking-tight text-white">
             Xaf
           </span>
         </div>
 
         {/* Menu Items */}
-        <div className="flex-1 px-4 py-4 space-y-1">
-          <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">
+        <div className="flex-1 px-4 py-6 space-y-1.5">
+          <div className="text-[11px] font-bold text-blue-200 uppercase tracking-wider px-3 mb-2 opacity-80">
             Main
           </div>
           <button
             onClick={() => setActiveTab("dashboard")}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "dashboard" ? (isDarkMode ? "bg-[#3b82f6]/20 text-[#3b82f6]" : "bg-[#e7f1ff] text-[#3b82f6]") : "text-slate-400 hover:bg-slate-500/5"}`}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "dashboard" ? "bg-white text-blue-600 font-bold shadow-md" : "text-white/80 hover:bg-white/10"}`}
           >
             <LayoutDashboard size={18} />
             <span>Dashboard</span>
           </button>
 
-          <div className="pt-4 text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-3 mb-2">
+          <div className="pt-5 text-[11px] font-bold text-blue-200 uppercase tracking-wider px-3 mb-2 opacity-80">
             Manajemen Data
           </div>
           <button
             onClick={() => setActiveTab("projects")}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "projects" ? (isDarkMode ? "bg-[#3b82f6]/20 text-[#3b82f6]" : "bg-[#e7f1ff] text-[#3b82f6]") : "text-slate-400 hover:bg-slate-500/5"}`}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "projects" ? "bg-white text-blue-600 font-bold shadow-md" : "text-white/80 hover:bg-white/10"}`}
           >
             <Briefcase size={18} />
             <span>Projek Kerja</span>
           </button>
           <button
             onClick={() => setActiveTab("testimonials")}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "testimonials" ? (isDarkMode ? "bg-[#3b82f6]/20 text-[#3b82f6]" : "bg-[#e7f1ff] text-[#3b82f6]") : "text-slate-400 hover:bg-slate-500/5"}`}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "testimonials" ? "bg-white text-blue-600 font-bold shadow-md" : "text-white/80 hover:bg-white/10"}`}
           >
             <MessageSquare size={18} />
             <span>Testimonial</span>
@@ -210,32 +217,53 @@ export default function AdminDashboard({
         </div>
       </aside>
 
-      {/* ================= AREA KONTEN UTAMA ================= */}
+      {/* ================= TOP NAV BAR & HEADER CONTROLLER ================= */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* TOP NAVBAR */}
         <header
-          className={`h-16 px-6 flex items-center justify-between sticky top-0 z-40 backdrop-blur border-b ${isDarkMode ? "bg-[#2b2c40]/80 border-[#363853]" : "bg-white/80 border-slate-200"}`}
+          className={`h-16 px-6 flex items-center justify-between sticky top-0 z-50 backdrop-blur border-b transition-colors duration-300 ${isDark ? "bg-[#2b2c40]/90 border-[#363853]" : "bg-white/90 border-slate-200"}`}
         >
-          <div className="flex items-center gap-2 text-slate-400 text-sm max-w-xs w-full">
-            <Search size={18} />
-            <span className="opacity-60">Search... (Ctrl+K)</span>
+          {/* Sisi Kiri: Tombol Menu Hamburger untuk Mobile */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className={`p-2 rounded-lg lg:hidden transition-all ${isDark ? "hover:bg-slate-700 text-white" : "hover:bg-slate-100 text-slate-700"}`}
+            >
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            <div className="lg:hidden flex items-center gap-2">
+              <img
+                src="/icon.png"
+                alt="Logo"
+                className="w-6 h-6 object-contain"
+                onError={(e) => {
+                  e.target.style.display = "none";
+                }}
+              />
+              <span
+                className={`font-bold text-lg ${isDark ? "text-white" : "text-slate-800"}`}
+              >
+                Xaf
+              </span>
+            </div>
           </div>
 
+          {/* Sisi Kanan: Toggle Dark Mode & Profil Pengguna */}
           <div className="flex items-center gap-4">
-            <div className="text-slate-400 p-1.5 rounded-lg">
-              {isDarkMode ? (
-                <Moon size={18} className="text-blue-400" />
-              ) : (
-                <Sun size={18} className="text-amber-500" />
-              )}
-            </div>
+            {/* Tombol Switch Tema Malam / Siang (Sekarang Berfungsi) */}
+            <button
+              onClick={() => setLocalDarkMode(!localDarkMode)}
+              className={`p-2 rounded-lg border transition-all ${isDark ? "border-[#434460] text-amber-400 bg-slate-800" : "border-slate-200 text-slate-600 bg-slate-50"}`}
+              title={isDark ? "Aktifkan Mode Terang" : "Aktifkan Mode Malam"}
+            >
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
             <div className="h-8 w-px bg-slate-300 dark:bg-slate-700"></div>
 
-            {/* Profil Admin & Logout */}
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
                 <p
-                  className={`text-xs font-bold ${isDarkMode ? "text-white" : "text-[#566a7f]"}`}
+                  className={`text-xs font-bold ${isDark ? "text-white" : "text-[#566a7f]"}`}
                 >
                   XAF7 ENGINE
                 </p>
@@ -244,7 +272,7 @@ export default function AdminDashboard({
               <button
                 onClick={onLogout}
                 className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-all"
-                title="Keluar"
+                title="Keluar Aplikasi"
               >
                 <LogOut size={16} />
               </button>
@@ -252,26 +280,61 @@ export default function AdminDashboard({
           </div>
         </header>
 
-        {/* VIEW KONTEN BERDASARKAN TAB YANG AKTIF */}
+        {/* ================= DROPDOWN MENU UNTUK VERSI MOBILE ================= */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden w-full bg-blue-600 text-white animate-fadeIn border-b border-blue-700 shadow-lg">
+            <div className="px-4 py-3 space-y-1 text-sm font-medium">
+              <button
+                onClick={() => {
+                  setActiveTab("dashboard");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left ${activeTab === "dashboard" ? "bg-white text-blue-600 font-bold" : "text-white/90"}`}
+              >
+                <LayoutDashboard size={16} /> Dashboard
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("projects");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left ${activeTab === "projects" ? "bg-white text-blue-600 font-bold" : "text-white/90"}`}
+              >
+                <Briefcase size={16} /> Projek Kerja
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("testimonials");
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left ${activeTab === "testimonials" ? "bg-white text-blue-600 font-bold" : "text-white/90"}`}
+              >
+                <MessageSquare size={16} /> Testimonial
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* CONTAINER UTAMA HALAMAN */}
         <main className="flex-1 p-6 space-y-6 overflow-y-auto max-w-7xl w-full mx-auto">
-          {/* 1. TAMPILAN JIKA TAB UTAMA (DASHBOARD) AKTIF */}
+          {/* TAB 1: DASHBOARD UTAMA */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 {/* Banner Selamat Datang */}
                 <div
-                  className={`xl:col-span-2 p-6 rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden ${isDarkMode ? "bg-[#2b2c40]" : "bg-white"}`}
+                  className={`xl:col-span-2 p-6 rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden transition-colors ${isDark ? "bg-[#2b2c40]" : "bg-white"}`}
                 >
                   <div className="space-y-2 max-w-md">
                     <h2
-                      className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-blue-600"}`}
+                      className={`text-lg font-bold ${isDark ? "text-white" : "text-blue-600"}`}
                     >
                       Selamat Datang Kembali, Administrator! 🎉
                     </h2>
                     <p className="text-xs text-slate-400 leading-relaxed">
-                      Manajemen konten dan arsitektur database terhubung
-                      langsung secara real-time dengan Supabase Server. Pilih
-                      tab menu di kiri untuk mengelola data spesifik.
+                      Manajemen sistem basis data terintegrasi real-time.
+                      Silakan pilih menu spesifik di bilah samping atau atas
+                      untuk memodifikasi komponen portofolio Anda.
                     </p>
                   </div>
                   <div className="mt-4">
@@ -279,15 +342,12 @@ export default function AdminDashboard({
                       Lihat Log Database
                     </button>
                   </div>
-                  <div className="absolute right-6 bottom-0 top-0 w-32 hidden sm:flex items-center justify-center opacity-10">
-                    <LayoutDashboard size={120} className="text-blue-600" />
-                  </div>
                 </div>
 
-                {/* Kartu Informasi Ringkasan */}
+                {/* Kartu Statistik */}
                 <div className="grid grid-cols-2 gap-6">
                   <div
-                    className={`p-5 rounded-xl shadow-sm flex flex-col justify-between cursor-pointer hover:border-blue-500/40 border transition-all ${isDarkMode ? "bg-[#2b2c40] border-transparent" : "bg-white border-transparent"}`}
+                    className={`p-5 rounded-xl shadow-sm flex flex-col justify-between cursor-pointer border hover:border-blue-500/40 transition-all ${isDark ? "bg-[#2b2c40] border-transparent" : "bg-white border-transparent"}`}
                     onClick={() => setActiveTab("projects")}
                   >
                     <div className="p-2.5 bg-blue-500/10 text-blue-600 rounded-lg w-10">
@@ -298,18 +358,18 @@ export default function AdminDashboard({
                         Total Projek
                       </span>
                       <h3
-                        className={`text-2xl font-bold mt-1 ${isDarkMode ? "text-white" : "text-[#566a7f]"}`}
+                        className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-slate-700"}`}
                       >
                         {projects.length}
                       </h3>
                       <span className="text-[10px] text-blue-500 font-medium mt-1 inline-block">
-                        Kelola Projek →
+                        Buka Projek →
                       </span>
                     </div>
                   </div>
 
                   <div
-                    className={`p-5 rounded-xl shadow-sm flex flex-col justify-between cursor-pointer hover:border-blue-500/40 border transition-all ${isDarkMode ? "bg-[#2b2c40] border-transparent" : "bg-white border-transparent"}`}
+                    className={`p-5 rounded-xl shadow-sm flex flex-col justify-between cursor-pointer border hover:border-blue-500/40 transition-all ${isDark ? "bg-[#2b2c40] border-transparent" : "bg-white border-transparent"}`}
                     onClick={() => setActiveTab("testimonials")}
                   >
                     <div className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-lg w-10">
@@ -320,12 +380,12 @@ export default function AdminDashboard({
                         Testimonial
                       </span>
                       <h3
-                        className={`text-2xl font-bold mt-1 ${isDarkMode ? "text-white" : "text-[#566a7f]"}`}
+                        className={`text-2xl font-bold mt-1 ${isDark ? "text-white" : "text-slate-700"}`}
                       >
                         {testimonials.length}
                       </h3>
                       <span className="text-[10px] text-emerald-500 font-medium mt-1 inline-block">
-                        Kelola Ulasan →
+                        Buka Ulasan →
                       </span>
                     </div>
                   </div>
@@ -334,10 +394,10 @@ export default function AdminDashboard({
             </div>
           )}
 
-          {/* 2. TAMPILAN JIKA TAB PROJEK KERJA AKTIF */}
+          {/* TAB 2: HALAMAN FORM PROJEK KERJA */}
           {activeTab === "projects" && (
             <div
-              className={`rounded-xl shadow-sm p-6 space-y-5 border ${isDarkMode ? "bg-[#2b2c40] border-transparent" : "bg-white border-slate-100"}`}
+              className={`rounded-xl shadow-sm p-6 space-y-5 border transition-colors ${isDark ? "bg-[#2b2c40] border-transparent" : "bg-white border-slate-100"}`}
             >
               <div className="flex items-center gap-2.5 pb-3 border-b border-slate-500/10">
                 <div className="p-2 bg-blue-500/10 text-blue-600 rounded-lg">
@@ -345,7 +405,7 @@ export default function AdminDashboard({
                 </div>
                 <div>
                   <h3
-                    className={`text-sm font-bold ${isDarkMode ? "text-white" : "text-[#566a7f]"}`}
+                    className={`text-sm font-bold ${isDark ? "text-white" : "text-[#566a7f]"}`}
                   >
                     Manajemen Postingan Projek
                   </h3>
@@ -371,7 +431,7 @@ export default function AdminDashboard({
                       setProjForm({ ...projForm, title: e.target.value })
                     }
                     placeholder="EduSmart - Dashboard Portal"
-                    className={`w-full border rounded-lg px-3 py-2.5 outline-none transition-all ${isDarkMode ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
+                    className={`w-full border rounded-lg px-3 py-2.5 outline-none transition-all ${isDark ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -387,7 +447,7 @@ export default function AdminDashboard({
                         setProjForm({ ...projForm, category: e.target.value })
                       }
                       placeholder="Sistem Academic"
-                      className={`w-full border rounded-lg px-3 py-2.5 outline-none transition-all ${isDarkMode ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
+                      className={`w-full border rounded-lg px-3 py-2.5 outline-none transition-all ${isDark ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
                     />
                   </div>
                   <div>
@@ -401,7 +461,7 @@ export default function AdminDashboard({
                       onChange={(e) =>
                         setProjForm({ ...projForm, tech: e.target.value })
                       }
-                      className={`w-full border rounded-lg px-3 py-2.5 outline-none transition-all ${isDarkMode ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
+                      className={`w-full border rounded-lg px-3 py-2.5 outline-none transition-all ${isDark ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
                     />
                   </div>
                 </div>
@@ -417,42 +477,38 @@ export default function AdminDashboard({
                       setProjForm({ ...projForm, desc: e.target.value })
                     }
                     placeholder="Platform manajemen data..."
-                    className={`w-full border rounded-lg px-3 py-2.5 outline-none resize-none transition-all ${isDarkMode ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
+                    className={`w-full border rounded-lg px-3 py-2.5 outline-none resize-none transition-all ${isDark ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
                   ></textarea>
                 </div>
 
                 <button
                   type="submit"
                   disabled={savingProj}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition-all shadow-sm shadow-blue-600/20 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
                 >
                   {savingProj ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />{" "}
-                      Menyimpan...
-                    </>
+                    <Loader2 size={14} className="animate-spin" />
                   ) : (
-                    <>
-                      <Plus size={14} /> Tambahkan Projek Baru
-                    </>
+                    <Plus size={14} />
                   )}
+                  TAMBAHKAN PROJEK BARU
                 </button>
               </form>
 
-              {/* List Data Di Bawah Form Projek */}
+              {/* List Projek Aktif */}
               <div className="pt-4 border-t border-slate-500/10 space-y-2">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                   List Projek Aktif ({projects.length})
                 </span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto">
                   {projects.map((p) => (
                     <div
                       key={p.id}
-                      className={`p-3 rounded-lg border flex items-center justify-between text-[12px] transition-all ${isDarkMode ? "bg-[#232333] border-[#363853]" : "bg-[#f5f5f9] border-slate-100"}`}
+                      className={`p-3 rounded-lg border flex items-center justify-between text-[12px] ${isDark ? "bg-[#232333] border-[#363853]" : "bg-[#f5f5f9] border-slate-100"}`}
                     >
-                      <div className="truncate max-w-[80%]">
+                      <div>
                         <span
-                          className={`font-bold block ${isDarkMode ? "text-slate-200" : "text-[#566a7f]"}`}
+                          className={`font-bold block ${isDark ? "text-slate-200" : "text-[#566a7f]"}`}
                         >
                           {p.title}
                         </span>
@@ -463,7 +519,7 @@ export default function AdminDashboard({
                       <button
                         onClick={() => handleDeleteProject(p.id)}
                         disabled={deletingId === p.id}
-                        className="text-red-500 p-1.5 hover:bg-red-500/10 rounded-lg transition-all shrink-0"
+                        className="text-red-500 p-1.5 hover:bg-red-500/10 rounded-lg"
                       >
                         {deletingId === p.id ? (
                           <Loader2 size={14} className="animate-spin" />
@@ -478,10 +534,10 @@ export default function AdminDashboard({
             </div>
           )}
 
-          {/* 3. TAMPILAN JIKA TAB TESTIMONIAL AKTIF */}
+          {/* TAB 3: HALAMAN FORM TESTIMONIAL & FOTO WEB */}
           {activeTab === "testimonials" && (
             <div
-              className={`rounded-xl shadow-sm p-6 space-y-5 border ${isDarkMode ? "bg-[#2b2c40] border-transparent" : "bg-white border-slate-100"}`}
+              className={`rounded-xl shadow-sm p-6 space-y-5 border transition-colors ${isDark ? "bg-[#2b2c40] border-transparent" : "bg-white border-slate-100"}`}
             >
               <div className="flex items-center gap-2.5 pb-3 border-b border-slate-500/10">
                 <div className="p-2 bg-blue-500/10 text-blue-600 rounded-lg">
@@ -489,12 +545,12 @@ export default function AdminDashboard({
                 </div>
                 <div>
                   <h3
-                    className={`text-sm font-bold ${isDarkMode ? "text-white" : "text-[#566a7f]"}`}
+                    className={`text-sm font-bold ${isDark ? "text-white" : "text-[#566a7f]"}`}
                   >
                     Manajemen Komentar Testimoni
                   </h3>
                   <p className="text-[10px] text-slate-400 font-medium">
-                    Urus respon validasi eksternal dari klien
+                    Urus respon validasi eksternal beserta gambar lampiran web
                   </p>
                 </div>
               </div>
@@ -505,7 +561,7 @@ export default function AdminDashboard({
               >
                 <div>
                   <label className="block text-slate-400 mb-1.5 font-medium">
-                    Isi Komentar Klien
+                    Isi Komentar Klien / Ulasan
                   </label>
                   <textarea
                     rows="3"
@@ -515,9 +571,26 @@ export default function AdminDashboard({
                       setTestiForm({ ...testiForm, quote: e.target.value })
                     }
                     placeholder="Sistem dashboard internal sangat membantu..."
-                    className={`w-full border rounded-lg px-3 py-2.5 outline-none resize-none transition-all ${isDarkMode ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
+                    className={`w-full border rounded-lg px-3 py-2.5 outline-none resize-none transition-all ${isDark ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
                   ></textarea>
                 </div>
+
+                {/* Penambahan Fitur Input Link Foto Web/Klien */}
+                <div>
+                  <label className="block text-slate-400 mb-1.5 font-medium flex items-center gap-1">
+                    <Image size={12} /> URL Foto Web / Avatar Klien
+                  </label>
+                  <input
+                    type="url"
+                    value={testiForm.avatar_url}
+                    onChange={(e) =>
+                      setTestiForm({ ...testiForm, avatar_url: e.target.value })
+                    }
+                    placeholder="https://example.com/foto-web.png"
+                    className={`w-full border rounded-lg px-3 py-2.5 outline-none transition-all ${isDark ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-400 mb-1.5 font-medium">
@@ -531,7 +604,7 @@ export default function AdminDashboard({
                         setTestiForm({ ...testiForm, name: e.target.value })
                       }
                       placeholder="Contoh: GT atau Nama Lengkap"
-                      className={`w-full border rounded-lg px-3 py-2.5 outline-none transition-all ${isDarkMode ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
+                      className={`w-full border rounded-lg px-3 py-2.5 outline-none transition-all ${isDark ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
                     />
                   </div>
                   <div>
@@ -546,7 +619,7 @@ export default function AdminDashboard({
                         setTestiForm({ ...testiForm, company: e.target.value })
                       }
                       placeholder="Global Tech Corp"
-                      className={`w-full border rounded-lg px-3 py-2.5 outline-none transition-all ${isDarkMode ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
+                      className={`w-full border rounded-lg px-3 py-2.5 outline-none transition-all ${isDark ? "bg-[#232333] border-[#434460] text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
                     />
                   </div>
                 </div>
@@ -554,44 +627,52 @@ export default function AdminDashboard({
                 <button
                   type="submit"
                   disabled={savingTesti}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition-all shadow-sm shadow-blue-600/20 flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-lg text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2"
                 >
                   {savingTesti ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />{" "}
-                      Menyimpan...
-                    </>
+                    <Loader2 size={14} className="animate-spin" />
                   ) : (
-                    <>
-                      <Plus size={14} /> Publikasikan Testimoni
-                    </>
+                    <Plus size={14} />
                   )}
+                  PUBLIKASIKAN TESTIMONI
                 </button>
               </form>
 
-              {/* List Data Di Bawah Form Testimonial */}
+              {/* List Testimoni Aktif */}
               <div className="pt-4 border-t border-slate-500/10 space-y-2">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                   List Testimoni Aktif ({testimonials.length})
                 </span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto">
                   {testimonials.map((t) => (
                     <div
                       key={t.id}
-                      className={`p-3 rounded-lg border flex items-center justify-between text-[11px] transition-all ${isDarkMode ? "bg-[#232333] border-[#363853]" : "bg-[#f5f5f9] border-slate-100"}`}
+                      className={`p-3 rounded-lg border flex items-center justify-between text-[11px] ${isDark ? "bg-[#232333] border-[#363853]" : "bg-[#f5f5f9] border-slate-100"}`}
                     >
-                      <div className="truncate max-w-[85%]">
-                        <span className="text-slate-400 italic block truncate">
-                          "{t.quote}"
-                        </span>
-                        <span className="text-[10px] font-semibold text-blue-500 mt-0.5 block">
-                          {t.name} — {t.company}
-                        </span>
+                      <div className="flex items-center gap-3 truncate max-w-[85%]">
+                        {t.avatar_url && (
+                          <img
+                            src={t.avatar_url}
+                            alt="Web"
+                            className="w-8 h-8 rounded object-cover border border-slate-300 shrink-0"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                            }}
+                          />
+                        )}
+                        <div className="truncate">
+                          <span className="text-slate-400 italic block truncate">
+                            "{t.quote}"
+                          </span>
+                          <span className="text-[10px] font-semibold text-blue-500 mt-0.5 block">
+                            {t.name} — {t.company}
+                          </span>
+                        </div>
                       </div>
                       <button
                         onClick={() => handleDeleteTestimonial(t.id)}
                         disabled={deletingId === t.id}
-                        className="text-red-500 p-1.5 hover:bg-red-500/10 rounded-lg transition-all shrink-0"
+                        className="text-red-500 p-1.5 hover:bg-red-500/10 rounded-lg"
                       >
                         {deletingId === t.id ? (
                           <Loader2 size={14} className="animate-spin" />
