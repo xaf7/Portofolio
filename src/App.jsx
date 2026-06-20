@@ -473,12 +473,13 @@ export default function App() {
   if (viewMode === "admin") {
     return (
       <AdminDashboard
-        isDarkMode={isDarkMode}
         projects={projects}
         setProjects={setProjects}
         testimonials={testimonials}
         setTestimonials={setTestimonials}
         onLogout={handleLogout}
+        isDarkMode={isDarkMode}
+        toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
       />
     );
   }
@@ -633,98 +634,110 @@ export default function App() {
         </div>
       </section>
 
-      {/* PORTFOLIO SHOWCASE */}
+      {/* PORTFOLIO SHOWCASE — INFINITE MARQUEE SLIDER */}
       <section
         id="showcase"
         ref={showcaseRef}
-        className={`w-full py-16 sm:py-20 px-4 sm:px-6 border-t border-b transition-all duration-1000 transform ${showcaseVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-[#222831] border-slate-900" : "bg-[#112E81] border-blue-800"}`}
+        className={`w-full py-16 sm:py-20 border-t border-b overflow-hidden transition-all duration-1000 transform ${showcaseVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-[#222831] border-slate-900" : "bg-[#112E81] border-blue-800"}`}
       >
-        <div className="max-w-5xl mx-auto">
-          <div className="mb-10 sm:mb-12">
-            <span
-              className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-blue-400" : "text-blue-200"}`}
-            >
-              {t[lang].showcase.badge}
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-1 text-white">
-              {t[lang].showcase.title}
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
-            {projects.map((project) => (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-8 sm:mb-10">
+          <span
+            className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-blue-400" : "text-blue-200"}`}
+          >
+            {t[lang].showcase.badge}
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-1 text-white">
+            {t[lang].showcase.title}
+          </h2>
+        </div>
+
+        {/* Container Utama Slider */}
+        <div className="relative w-full overflow-hidden flex">
+          {/* Efek Blur Transparan Sinematik di Kiri dan Kanan Slider (Khusus Desktop) */}
+          <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#112E81] via-[#112E81]/40 to-transparent z-20 pointer-events-none hidden md:block dark:from-[#222831]"></div>
+          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#112E81] via-[#112E81]/40 to-transparent z-20 pointer-events-none hidden md:block dark:from-[#222831]"></div>
+          {/* Track Jalannya Animasi */}
+          <div className="animate-marquee-portfolio gap-4 sm:gap-6 px-4">
+            {/* Hanya memetakan data asli dari database tanpa duplikasi */}
+            {projects.map((project, index) => (
               <div
-                key={project.id}
-                className="border border-slate-800/80 rounded-2xl p-5 sm:p-6 flex flex-col justify-between transition-all bg-[#13161c] hover:border-slate-700 shadow-2xl relative overflow-hidden group text-white"
+                key={`${project.id}-${index}`}
+                className="border border-slate-800/80 rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-all bg-[#13161c] hover:border-slate-700 shadow-2xl relative overflow-hidden group text-white w-[280px] sm:w-[380px] shrink-0"
               >
                 <div>
                   <div
-                    className={`w-full rounded-xl bg-gradient-to-br ${project.color} p-4 sm:p-5 flex flex-col justify-between text-white mb-5 sm:mb-6 shadow-inner relative overflow-hidden h-64 sm:h-72`}
+                    className={`w-full rounded-xl bg-gradient-to-br ${project.color} flex flex-col justify-between text-white mb-4 sm:mb-6 shadow-inner relative overflow-hidden h-48 sm:h-60`}
                   >
-                    <div className="flex items-start justify-between gap-4 z-10 w-full">
-                      <h3 className="text-sm sm:text-base font-black tracking-tight leading-tight max-w-[65%] drop-shadow-md">
+                    {/* Background Gambar Hasil Upload */}
+                    {project.image_url && (
+                      <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
+                        <img
+                          src={project.image_url}
+                          alt={project.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/50"></div>
+                      </div>
+                    )}
+
+                    {/* Header Kartu */}
+                    <div className="flex items-start justify-between gap-3 z-10 w-full p-3 sm:p-4">
+                      <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight max-w-[65%] drop-shadow-md truncate-2-lines">
                         {project.title}
                       </h3>
-                      <span className="text-[9px] font-black uppercase tracking-wider bg-black/40 px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 border border-white/10 backdrop-blur-sm shadow-sm">
+                      <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider bg-black/40 px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap shrink-0 border border-white/10 backdrop-blur-sm">
                         {project.category}
                       </span>
                     </div>
-                    <div className="w-full opacity-95 transition-transform duration-500 group-hover:translate-y-[-6px] pointer-events-none flex flex-col justify-end z-10 mt-auto">
-                      <div className="absolute inset-x-0 bottom-0 mx-auto w-40 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                      <div className="w-full bg-black/50 backdrop-blur-xl border border-white/15 rounded-t-xl p-3.5 shadow-2xl flex flex-col gap-3 h-44">
-                        <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                          <div className="flex gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-red-500/90"></span>
-                            <span className="w-2 h-2 rounded-full bg-yellow-500/90"></span>
-                            <span className="w-2 h-2 rounded-full bg-green-500/90"></span>
-                          </div>
-                          <div className="bg-white/10 rounded-md px-3 py-0.5 text-[8px] text-white/60 font-mono tracking-tight truncate w-40 text-center border border-white/5">
-                            localhost:3000/live-preview
-                          </div>
-                          <div className="text-[8px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 shadow-sm">
-                            {project.speed || "99/100"}
-                          </div>
+
+                    {/* Bar Navigasi Preview Tiruan */}
+                    <div className="w-full opacity-95 transition-transform duration-500 group-hover:translate-y-[-4px] pointer-events-none flex flex-col justify-end z-10 mt-auto">
+                      <div className="mx-3 mb-3 sm:mx-4 sm:mb-4 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xl flex items-center justify-between">
+                        <div className="flex gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                         </div>
-                        <div className="flex flex-col gap-2.5">
-                          <div className="flex flex-col gap-1">
-                            <div className="w-4/5 h-3 bg-gradient-to-r from-white to-white/40 rounded-sm"></div>
-                            <div className="w-1/2 h-2 bg-white/20 rounded-sm"></div>
-                          </div>
-                          <div className="grid grid-cols-3 gap-2 mt-1">
-                            <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex flex-col gap-1.5 shadow-sm">
-                              <div className="w-full h-2 bg-blue-400/50 rounded-sm"></div>
-                              <div className="w-5/6 h-1 bg-white/20 rounded-xs"></div>
-                            </div>
-                            <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex flex-col gap-1.5 shadow-sm">
-                              <div className="w-full h-2 bg-purple-400/50 rounded-sm"></div>
-                              <div className="w-5/6 h-1 bg-white/20 rounded-xs"></div>
-                            </div>
-                            <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex flex-col gap-1.5 shadow-sm">
-                              <div className="w-full h-2 bg-emerald-400/50 rounded-sm"></div>
-                              <div className="w-5/6 h-1 bg-white/20 rounded-xs"></div>
-                            </div>
-                          </div>
+                        <div className="text-[7px] sm:text-[8px] text-white/50 font-mono tracking-tight truncate w-24 sm:w-32 text-center">
+                          xaf7studio.com/preview
+                        </div>
+                        <div className="text-[7px] sm:text-[8px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                          {project.speed || "99/100"}
                         </div>
                       </div>
                     </div>
                   </div>
-                  <p className="text-[12px] leading-relaxed mb-5 sm:mb-6 text-slate-300">
-                    {project.desc}
+
+                  {/* Deskripsi Projek */}
+                  <p className="text-[11px] sm:text-[12px] leading-relaxed mb-4 sm:mb-6 text-slate-300 line-clamp-3">
+                    {project.description || project.desc}
                   </p>
                 </div>
-                <div className="flex items-center justify-between pt-4 border-t border-slate-800/60">
-                  <span className="text-[10px] px-2.5 py-1 rounded-md font-mono border bg-slate-900 text-slate-300 border-slate-800">
+
+                <div className="flex items-center justify-between pt-3 border-t border-slate-800/60">
+                  <span className="text-[9px] sm:text-[10px] px-2 py-0.5 sm:py-1 rounded-md font-mono border bg-slate-900 text-slate-300 border-slate-800">
                     {project.tech}
                   </span>
-                  <button className="text-xs font-bold text-blue-400 hover:text-blue-300 hover:underline">
-                    {t[lang].showcase.testBtn}
-                  </button>
+                  {project.web_url ? (
+                    <a
+                      href={project.web_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-bold text-blue-400 hover:text-blue-300 hover:underline inline-flex items-center"
+                    >
+                      {t[lang].showcase.testBtn}
+                    </a>
+                  ) : (
+                    <span className="text-[11px] font-bold text-slate-500 cursor-not-allowed">
+                      No Preview
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </div>
       </section>
-
       {/* SEKSI TESTIMONI SLIDER */}
       <section
         id="testimoni"
@@ -776,9 +789,29 @@ export default function App() {
                     </div>
                     <div className="flex justify-between items-end border-t border-slate-800/60 pt-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden uppercase">
+                        {/* Perbaikan: Menampilkan Foto Avatar Client dari Dashboard */}
+                        {tItem.avatar_url ? (
+                          <img
+                            src={tItem.avatar_url}
+                            alt={tItem.name}
+                            className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-700 shadow-sm"
+                            onError={(e) => {
+                              // Jika link gambar rusak/error, otomatis switch balik ke tampilan inisial teks
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+
+                        <div
+                          className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden uppercase shrink-0"
+                          style={{
+                            display: tItem.avatar_url ? "none" : "flex",
+                          }}
+                        >
                           {tItem.name.substring(0, 2)}
                         </div>
+
                         <div>
                           <h4 className="text-xs font-black text-white">
                             {tItem.name}
