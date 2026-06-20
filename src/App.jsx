@@ -894,6 +894,7 @@ export default function App() {
                   className={`w-full border rounded-xl p-2.5 outline-none transition-all ${isDarkMode ? "bg-[#11141c] border-slate-800 text-white focus:border-blue-500" : "bg-white border-slate-200 text-slate-900 focus:border-blue-500"}`}
                 />
               </div>
+
               <div>
                 <label
                   className={`block mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-800 font-bold"}`}
@@ -901,7 +902,7 @@ export default function App() {
                   {t[lang].brief.labelReq}
                 </label>
                 <textarea
-                  rows="3"
+                  rows="4"
                   value={briefForm.systemRequirement}
                   onChange={(e) =>
                     setBriefForm({
@@ -913,46 +914,42 @@ export default function App() {
                   className={`w-full border rounded-xl p-2.5 outline-none resize-none transition-all ${isDarkMode ? "bg-[#11141c] border-slate-800 text-white focus:border-blue-500" : "bg-white border-slate-200 text-slate-900 focus:border-blue-500"}`}
                 ></textarea>
               </div>
-              <div>
-                <label
-                  className={`block mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-800 font-bold"}`}
+
+              {/* Teks Informasi Skema Harga Custom (Menggantikan Pilihan Estimasi Anggaran Lama) */}
+              <div
+                className={`p-3.5 rounded-xl border flex flex-col gap-1 ${isDarkMode ? "bg-[#11141c] border-blue-900/50" : "bg-blue-50/70 border-blue-100"}`}
+              >
+                <div className="flex justify-between items-center">
+                  <span
+                    className={`text-[11px] font-black ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}
+                  >
+                    Harga Pengerjaan
+                  </span>
+                  <span
+                    className={`text-xs font-black px-2 py-0.5 rounded-md ${isDarkMode ? "bg-blue-950 text-blue-300" : "bg-blue-100 text-blue-700"}`}
+                  >
+                    Mulai Rp 700k
+                  </span>
+                </div>
+                <p
+                  className={`text-[10px] leading-relaxed font-medium mt-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}
                 >
-                  {t[lang].brief.labelBudget}
-                </label>
-                <select
-                  value={briefForm.estimatedBudget}
-                  onChange={(e) =>
-                    setBriefForm({
-                      ...briefForm,
-                      estimatedBudget: e.target.value,
-                    })
-                  }
-                  className={`w-full border rounded-xl p-2.5 outline-none transition-all ${isDarkMode ? "bg-[#11141c] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"}`}
-                >
-                  <option value="Starter - Rp 500.000">
-                    Starter - Rp 500.000
-                  </option>
-                  <option value="Basic Hosting - Rp 1.000.000">
-                    Basic Hosting - Rp 1.000.000
-                  </option>
-                  <option value="Full Setup - Rp 1.200.000+">
-                    Full Setup - Rp 1.200.000+
-                  </option>
-                  <option value="Custom Enterprise - Rp 5.000.000+">
-                    Custom Enterprise - Rp 5.000.000+
-                  </option>
-                </select>
+                  Estimasi biaya akhir akan disesuaikan sepenuhnya berdasarkan
+                  kompleksitas fitur dan kebutuhan sistem yang Anda inginkan.
+                </p>
               </div>
+
+              {/* Tombol Pengiriman */}
               <div className="grid grid-cols-2 gap-2 pt-2">
                 <button
                   onClick={handleSendWhatsApp}
-                  className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-[11px]"
+                  className="py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-[11px] shadow-lg shadow-emerald-500/10 transform hover:-translate-y-0.5 active:translate-y-0"
                 >
                   <MessageCircle size={14} /> {t[lang].brief.btnWA}
                 </button>
                 <button
                   onClick={handleSendGmail}
-                  className="py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-[11px]"
+                  className="py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-[11px] shadow-lg shadow-blue-500/10 transform hover:-translate-y-0.5 active:translate-y-0"
                 >
                   <Mail size={14} /> {t[lang].brief.btnGmail}
                 </button>
