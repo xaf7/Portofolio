@@ -597,38 +597,19 @@ export default function App() {
             </button>
           </div>
 
-          {/* VISUAL MOCKUP */}
+          {/* VISUAL MOCKUP - DIGANTI DENGAN IMAGE LOGO TES.PNG */}
           <div className="relative flex justify-center items-center w-full mt-8 md:mt-0">
-            <div className="w-full max-w-md bg-black/50 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl h-72 flex flex-col justify-between">
-              <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <div className="flex gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                  <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                </div>
-                <div className="bg-white/10 rounded-md px-4 py-0.5 text-[9px] text-white/40 font-mono">
-                  xaf7studio.com/live-preview
-                </div>
-                <div className="w-4"></div>
-              </div>
-              <div className="flex flex-col gap-3 my-auto">
-                <div className="w-3/4 h-4 bg-gradient-to-r from-blue-500 to-transparent rounded"></div>
-                <div className="w-1/2 h-3 bg-white/20 rounded"></div>
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  <div className="h-16 bg-white/5 border border-white/10 rounded-lg p-2">
-                    <div className="w-full h-2 bg-blue-400/50 rounded mb-1"></div>
-                    <div className="w-2/3 h-1 bg-white/20 rounded"></div>
-                  </div>
-                  <div className="h-16 bg-white/5 border border-white/10 rounded-lg p-2">
-                    <div className="w-full h-2 bg-blue-500/50 rounded mb-1"></div>
-                    <div className="w-1/2 h-1 bg-white/20 rounded"></div>
-                  </div>
-                  <div className="h-16 bg-white/5 border border-white/10 rounded-lg p-2">
-                    <div className="w-full h-2 bg-emerald-400/50 rounded mb-1"></div>
-                    <div className="w-3/4 h-1 bg-white/20 rounded"></div>
-                  </div>
-                </div>
-              </div>
+            <div className="w-full max-w-md flex justify-center items-center p-2">
+              <img
+                src="/tes.png"
+                alt="Logo Tes"
+                className="w-full h-auto max-h-[320px] object-contain drop-shadow-[0_10px_25px_rgba(59,130,246,0.2)] transform hover:scale-102 transition-transform duration-500"
+                onError={(e) => {
+                  console.error(
+                    "Gagal memuat gambar /tes.png. Pastikan file ada di folder public/",
+                  );
+                }}
+              />
             </div>
           </div>
         </div>
