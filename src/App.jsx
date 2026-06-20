@@ -1068,27 +1068,25 @@ export default function App() {
           </div>
 
           {/* Kolom 4: Hubungi via WA */}
-          <div className="flex flex-col justify-between h-full">
-            <div>
-              <h4
-                className={`text-xs font-black uppercase tracking-wider mb-3 ${isDarkMode ? "text-white" : "text-slate-900"}`}
-              >
-                Konsultasi Cepat
-              </h4>
-              <p
-                className={`text-[11px] mb-4 leading-relaxed font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}
-              >
-                Punya konsep aplikasi atau butuh sistem kustom? Diskusikan
-                langsung sekarang.
-              </p>
-            </div>
+          <div>
+            <h4
+              className={`text-xs font-black uppercase tracking-wider mb-4 ${isDarkMode ? "text-white" : "text-slate-900"}`}
+            >
+              Konsultasi Cepat
+            </h4>
+            <p
+              className={`text-[11px] mb-3 leading-relaxed ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}
+            >
+              Punya konsep aplikasi atau butuh sistem kustom? Diskusikan
+              langsung sekarang.
+            </p>
             <a
               href="https://wa.me/6283129195737"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-xs font-bold py-3 px-5 rounded-full w-full transition-all duration-300 shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transform hover:-translate-y-0.5 active:translate-y-0"
+              className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-4 rounded-xl w-full transition-all shadow-md transform hover:scale-[1.02]"
             >
-              <span className="text-sm">💬</span> Chat via WhatsApp
+              💬 Chat via WhatsApp
             </a>
           </div>
         </div>{" "}
