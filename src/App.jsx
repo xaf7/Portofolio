@@ -789,9 +789,29 @@ export default function App() {
                     </div>
                     <div className="flex justify-between items-end border-t border-slate-800/60 pt-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden uppercase">
+                        {/* Perbaikan: Menampilkan Foto Avatar Client dari Dashboard */}
+                        {tItem.avatar_url ? (
+                          <img
+                            src={tItem.avatar_url}
+                            alt={tItem.name}
+                            className="w-9 h-9 rounded-full object-cover shrink-0 border border-slate-700 shadow-sm"
+                            onError={(e) => {
+                              // Jika link gambar rusak/error, otomatis switch balik ke tampilan inisial teks
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+
+                        <div
+                          className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden uppercase shrink-0"
+                          style={{
+                            display: tItem.avatar_url ? "none" : "flex",
+                          }}
+                        >
                           {tItem.name.substring(0, 2)}
                         </div>
+
                         <div>
                           <h4 className="text-xs font-black text-white">
                             {tItem.name}
