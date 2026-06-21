@@ -584,7 +584,6 @@ export default function App() {
           </button>
         </div>
       </nav>
-
       {/* HERO SECTION */}
       <section
         ref={heroRef}
@@ -630,7 +629,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* PORTFOLIO SHOWCASE — ALTERNATING BACKGROUND COLOR SPLIT */}
       <section
         id="showcase"
@@ -649,7 +647,6 @@ export default function App() {
             {t[lang].showcase.title}
           </h2>
         </div>
-
         {/* Container Utama Slider */}
         <div className="relative w-full overflow-hidden flex">
           {/* Efek Blur Transparan Sinematik */}
@@ -675,14 +672,17 @@ export default function App() {
                     {project.image_url && (
                       <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
                         <img
-                          src={project.image_url}
+                          src={
+                            project.image_url.startsWith("http")
+                              ? project.image_url
+                              : `https://pvybtfivfhnskbshwbbg.supabase.co/storage/v1/object/public/image/${project.image_url}`
+                          }
                           alt={project.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/50"></div>
                       </div>
                     )}
-
                     {/* Header Kartu */}
                     <div className="flex items-start justify-between gap-3 z-10 w-full p-3 sm:p-4">
                       <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight max-w-[65%] drop-shadow-md truncate-2-lines">
@@ -747,7 +747,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* SEKSI TESTIMONI — BRING HIERARCHY CONTRAST ACCENTS */}
       <section
         id="testimoni"
@@ -807,8 +806,21 @@ export default function App() {
                         className={`flex justify-between items-end border-t pt-4 ${isDarkMode ? "border-slate-800/60" : "border-slate-200"}`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden uppercase">
-                            {tItem.name.substring(0, 2)}
+                          {/* AVATAR DENGAN CHECK URL / PLACEHOLDER INISIAL */}
+                          <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden uppercase flex-shrink-0">
+                            {tItem.avatar_url ? (
+                              <img
+                                src={
+                                  tItem.avatar_url.startsWith("http")
+                                    ? tItem.avatar_url
+                                    : `https://pvybtfivfhnskbshwbbg.supabase.co/storage/v1/object/public/image/${tItem.avatar_url}`
+                                }
+                                alt={tItem.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              tItem.name.substring(0, 2)
+                            )}
                           </div>
                           <div>
                             <h4
@@ -862,7 +874,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* SEKSI BRIEF PROYEK — SPLIT DISTINCT BLOCK */}
       <section
         id="brief"
@@ -981,7 +992,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* FAQ SECTION */}
       <section
         id="faq"
@@ -1039,7 +1049,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* FOOTER */}
       <footer
         className={`w-full py-14 sm:py-16 px-4 sm:px-6 lg:px-20 border-t transition-colors duration-300 ${isDarkMode ? "bg-[#112E81] border-slate-900" : "bg-slate-50 border-slate-200"}`}
@@ -1161,7 +1170,6 @@ export default function App() {
           </div>
         </div>
       </footer>
-
       {/* CHATBOT */}
       <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 font-sans">
         {isChatOpen ? (
