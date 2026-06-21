@@ -57,12 +57,13 @@ export default function AdminDashboard({
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  // Helper upload berkas — Mengembalikan path relatif (misal: 'uploads/file.png')
-  const uploadImage = async (file) => {
+  // Perbaikan Utama: Mengembalikan Full Public URL Langsung dari Supabase Storage
+  const uploadImage = async (file, folderName = "projects") => {
     if (!file) return null;
     const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `uploads/${fileName}`;
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+    // Memasukkan file ke dalam folder yang sesuai (projects/ atau testimonials/)
+    const filePath = `${folderName}/${fileName}`;
 
     const { data, error: uploadError } = await supabase.storage
       .from("image")
@@ -77,7 +78,12 @@ export default function AdminDashboard({
       return null;
     }
 
-    return filePath;
+    // Ambil link URL Publik penuh dari berkas yang barusan diupload
+    const { data: publicUrlData } = supabase.storage
+      .from("image")
+      .getPublicUrl(filePath);
+
+    return publicUrlData?.publicUrl || null;
   };
 
   // Handler Submit Projek
@@ -88,8 +94,8 @@ export default function AdminDashboard({
     let finalImagePath = editingProject ? editingProject.image_url : "";
 
     if (projectFile) {
-      const uploadedPath = await uploadImage(projectFile);
-      if (uploadedPath) finalImagePath = uploadedPath;
+      const uploadedUrl = await uploadImage(projectFile, "projects");
+      if (uploadedUrl) finalImagePath = uploadedUrl;
     }
 
     const formattedDate = new Date().toLocaleDateString("en-GB", {
@@ -174,8 +180,8 @@ export default function AdminDashboard({
       : "";
 
     if (testimonialFile) {
-      const uploadedPath = await uploadImage(testimonialFile);
-      if (uploadedPath) finalAvatarPath = uploadedPath;
+      const uploadedUrl = await uploadImage(testimonialFile, "testimonials");
+      if (uploadedUrl) finalAvatarPath = uploadedUrl;
     }
 
     const payload = {
@@ -272,13 +278,14 @@ export default function AdminDashboard({
     setDeletingId(null);
   };
 
-  // URL Diperbaiki dinamis menggunakan database client bawaan agar tidak salah ketik link internal
-  const renderStorageImage = (path) => {
-    if (!path) return "";
-    if (path.startsWith("http")) return path;
+  // Fungsi fallback untuk memastikan link gambar selalu aman dibaca komponen img
+  const renderStorageImage = (urlPath) => {
+    if (!urlPath) return "";
+    // Jika link sudah berupa full URL HTTP/HTTPS, langsung return tanpa diubah
+    if (urlPath.startsWith("http")) return urlPath;
 
-    // Menggunakan fungsi bawaan dari SDK Supabase untuk mendapatkan public URL yang valid secara otomatis
-    const { data } = supabase.storage.from("image").getPublicUrl(path);
+    // Fallback jika database menyimpan path lama berupa string relatif saja
+    const { data } = supabase.storage.from("image").getPublicUrl(urlPath);
     return data?.publicUrl || "";
   };
 
