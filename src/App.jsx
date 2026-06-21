@@ -755,7 +755,7 @@ export default function App() {
         className={`w-full py-16 sm:py-20 overflow-hidden text-center transition-all duration-1000 transform ${testimoniVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-[#020408]" : "bg-white"}`}
       >
         <div
-          className={`max-w-6xl mx-auto py-10 sm:py-12 rounded-3xl border shadow-2xl mx-3 sm:mx-4 lg:mx-auto overflow-hidden transition-colors ${isDarkMode ? "bg-[#13161c] border-slate-800/80 text-white" : "bg-blue-50/60 border-blue-100 text-slate-900"}`}
+          className={`max-w-6xl mx-auto py-10 sm:py-12 rounded-3xl border shadow-2xl mx-3 sm:mx-4 lg:mx-auto overflow-hidden transition-colors ${isDarkMode ? "bg-[#15131E] border-slate-800/80 text-white" : "bg-blue-50/60 border-blue-100 text-slate-900"}`}
         >
           <div className="mb-4 px-4 sm:px-6">
             <h2
