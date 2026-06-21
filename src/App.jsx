@@ -584,7 +584,6 @@ export default function App() {
           </button>
         </div>
       </nav>
-
       {/* HERO SECTION */}
       <section
         ref={heroRef}
@@ -600,7 +599,7 @@ export default function App() {
               {t[lang].hero.badge}
             </div>
             <h1
-              className={`text-3xl sm:text-5xl md:text-6xl font-black tracking-tight mb-5 leading-tight ${isDarkMode ? "text-white" : "text-slate-100"}`}
+              className={`text-3xl sm:text-5xl md:text-6xl font-black tracking-tight mb-5 leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}
             >
               {t[lang].hero.title1} <br />
               {t[lang].hero.title2}{" "}
@@ -630,7 +629,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* PORTFOLIO SHOWCASE — ALTERNATING BACKGROUND COLOR SPLIT */}
       <section
         id="showcase"
@@ -649,7 +647,6 @@ export default function App() {
             {t[lang].showcase.title}
           </h2>
         </div>
-
         {/* Container Utama Slider */}
         <div className="relative w-full overflow-hidden flex">
           {/* Efek Blur Transparan Sinematik */}
@@ -671,48 +668,42 @@ export default function App() {
                   <div
                     className={`w-full rounded-xl bg-gradient-to-br ${project.color} flex flex-col justify-between text-white mb-4 sm:mb-6 shadow-inner relative overflow-hidden h-48 sm:h-60`}
                   >
-                    {/* Background Gambar Hasil Upload */}
-                    {project.image_url && (
-                      <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
-                        <img
-                          src={
-                            project.image_url.startsWith("http")
-                              ? project.image_url
-                              : `https://pvybtfivfhnskbshwbbg.supabase.co/storage/v1/object/public/image/${project.image_url.replace("projects/", "")}`
-                          }
-                          alt={project.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          onError={(e) => {
-                            e.target.src =
-                              "https://placehold.co/600x400/13161c/ffffff?text=No+Image";
-                          }}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/40 z-10"></div>
-                      </div>
-                    )}
-
+                    <img
+                      src={
+                        project.image_url.startsWith("http")
+                          ? project.image_url
+                          : `https://pvybtfivfhnskbshwbbg.supabase.co/storage/v1/object/public/image/${project.image_url.replace("projects/", "")}`
+                      }
+                      alt={project.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      onError={(e) => {
+                        // Jika masih ada link yang error/pecah, ganti otomatis ke gambar placeholder agar web tidak terlihat rusak
+                        e.target.src =
+                          "https://placehold.co/600x400?text=Image+Not+Found";
+                      }}
+                    />
                     {/* Header Kartu */}
-                    <div className="flex items-start justify-between gap-3 z-20 w-full p-3 sm:p-4">
-                      <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight max-w-[65%] drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] truncate-2-lines">
+                    <div className="flex items-start justify-between gap-3 z-10 w-full p-3 sm:p-4">
+                      <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight max-w-[65%] drop-shadow-md truncate-2-lines">
                         {project.title}
                       </h3>
-                      <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider bg-black/60 px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap shrink-0 border border-white/10 backdrop-blur-sm shadow-md">
+                      <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider bg-black/40 px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap shrink-0 border border-white/10 backdrop-blur-sm">
                         {project.category}
                       </span>
                     </div>
 
                     {/* Bar Navigasi Preview Tiruan */}
-                    <div className="w-full opacity-95 transition-transform duration-500 group-hover:translate-y-[-4px] pointer-events-none flex flex-col justify-end z-20 mt-auto">
-                      <div className="mx-3 mb-3 sm:mx-4 sm:mb-4 bg-black/75 backdrop-blur-md border border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xl flex items-center justify-between">
+                    <div className="w-full opacity-95 transition-transform duration-500 group-hover:translate-y-[-4px] pointer-events-none flex flex-col justify-end z-10 mt-auto">
+                      <div className="mx-3 mb-3 sm:mx-4 sm:mb-4 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xl flex items-center justify-between">
                         <div className="flex gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                           <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                         </div>
-                        <div className="text-[7px] sm:text-[8px] text-white/60 font-mono tracking-tight truncate w-24 sm:w-32 text-center drop-shadow">
+                        <div className="text-[7px] sm:text-[8px] text-white/50 font-mono tracking-tight truncate w-24 sm:w-32 text-center">
                           xaf7studio.com/preview
                         </div>
-                        <div className="text-[7px] sm:text-[8px] text-emerald-400 font-mono font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-500/30 whitespace-nowrap">
+                        <div className="text-[7px] sm:text-[8px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
                           {project.speed || "99/100"}
                         </div>
                       </div>
@@ -755,7 +746,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* SEKSI TESTIMONI — BRING HIERARCHY CONTRAST ACCENTS */}
       <section
         id="testimoni"
@@ -815,20 +805,17 @@ export default function App() {
                         className={`flex justify-between items-end border-t pt-4 ${isDarkMode ? "border-slate-800/60" : "border-slate-200"}`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden uppercase flex-shrink-0 relative">
+                          <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden uppercase flex-shrink-0">
                             {tItem.avatar_url ? (
                               <img
                                 src={
+                                  tItem.avatar_url &&
                                   tItem.avatar_url.startsWith("http")
                                     ? tItem.avatar_url
-                                    : `https://pvybtfivfhnskbshwbbg.supabase.co/storage/v1/object/public/image/${tItem.avatar_url.replace("testimonials/", "")}`
+                                    : `https://pvybtfivfhnskbshwbbg.supabase.co/storage/v1/object/public/image/${tItem.avatar_url}`
                                 }
                                 alt={tItem.name}
                                 className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.target.src =
-                                    "https://placehold.co/100x100/13161c/ffffff?text=Avatar";
-                                }}
                               />
                             ) : tItem.name ? (
                               tItem.name.substring(0, 2)
@@ -888,7 +875,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* SEKSI BRIEF PROYEK — SPLIT DISTINCT BLOCK */}
       <section
         id="brief"
@@ -1007,7 +993,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* FAQ SECTION */}
       <section
         id="faq"
@@ -1065,7 +1050,6 @@ export default function App() {
           </div>
         </div>
       </section>
-
       {/* FOOTER */}
       <footer
         className={`w-full py-14 sm:py-16 px-4 sm:px-6 lg:px-20 border-t transition-colors duration-300 ${isDarkMode ? "bg-[#112E81] border-slate-900" : "bg-slate-50 border-slate-200"}`}
@@ -1187,7 +1171,6 @@ export default function App() {
           </div>
         </div>
       </footer>
-
       {/* CHATBOT */}
       <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 font-sans">
         {isChatOpen ? (
