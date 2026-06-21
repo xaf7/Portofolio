@@ -278,14 +278,40 @@ export default function AdminDashboard({
     setDeletingId(null);
   };
 
-  // Fungsi fallback untuk memastikan link gambar selalu aman dibaca komponen img
+  // Fungsi fallback pintar untuk memastikan link gambar selalu bersih dan aman dibaca komponen <img>
   const renderStorageImage = (urlPath) => {
-    if (!urlPath) return "";
-    // Jika link sudah berupa full URL HTTP/HTTPS, langsung return tanpa diubah
-    if (urlPath.startsWith("http")) return urlPath;
+    if (!urlPath)
+      return "https://placehold.co/600x400/13161c/ffffff?text=No+Image";
 
-    // Fallback jika database menyimpan path lama berupa string relatif saja
-    const { data } = supabase.storage.from("image").getPublicUrl(urlPath);
+    let cleanPath = urlPath;
+
+    // 1. Jika ini full URL, mari bersihkan jika ada bug double folder (misal: projects/projects/)
+    if (cleanPath.startsWith("http")) {
+      if (cleanPath.includes("/public/image/projects/projects/")) {
+        cleanPath = cleanPath.replace(
+          "/public/image/projects/projects/",
+          "/public/image/projects/",
+        );
+      }
+      if (cleanPath.includes("/public/image/testimonials/testimonials/")) {
+        cleanPath = cleanPath.replace(
+          "/public/image/testimonials/testimonials/",
+          "/public/image/testimonials/",
+        );
+      }
+      return cleanPath;
+    }
+
+    // 2. Jika database menyimpan path lama berupa string relatif (misal: "projects/namafile.png")
+    if (cleanPath.startsWith("projects/projects/"))
+      cleanPath = cleanPath.replace("projects/projects/", "projects/");
+    if (cleanPath.startsWith("testimonials/testimonials/"))
+      cleanPath = cleanPath.replace(
+        "testimonials/testimonials/",
+        "testimonials/",
+      );
+
+    const { data } = supabase.storage.from("image").getPublicUrl(cleanPath);
     return data?.publicUrl || "";
   };
 
@@ -478,6 +504,11 @@ export default function AdminDashboard({
                             src={renderStorageImage(p.image_url)}
                             alt=""
                             className="w-10 h-10 object-cover rounded-lg bg-slate-800 flex-shrink-0"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src =
+                                "https://placehold.co/100x100/13161c/ffffff?text=Error";
+                            }}
                           />
                           <div className="min-w-0">
                             <span className="text-xs font-bold block truncate">
@@ -529,6 +560,11 @@ export default function AdminDashboard({
                             src={renderStorageImage(t.avatar_url)}
                             alt=""
                             className="w-10 h-10 object-cover rounded-full bg-slate-800 flex-shrink-0"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src =
+                                "https://placehold.co/100x100/13161c/ffffff?text=Error";
+                            }}
                           />
                           <div className="min-w-0">
                             <span className="text-xs font-bold block truncate">
