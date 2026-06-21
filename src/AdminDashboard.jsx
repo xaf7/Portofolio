@@ -57,23 +57,26 @@ export default function AdminDashboard({
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  // Helper upload berkas — Hanya mengembalikan path relatif (misal: 'uploads/file.png')
+  // Helper upload berkas ke Supabase Bucket 'image'
   const uploadImage = async (file) => {
     if (!file) return null;
     const fileExt = file.name.split(".").pop();
     const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `uploads/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
+    const { data, error: uploadError } = await supabase.storage
       .from("image")
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
 
     if (uploadError) {
+      console.error("Detail Error Supabase Storage:", uploadError);
       alert("Gagal mengunggah gambar: " + uploadError.message);
       return null;
     }
 
-    // Mengembalikan path-nya saja agar sinkron dengan gabungan URL di App.jsx
     return filePath;
   };
 
@@ -269,10 +272,9 @@ export default function AdminDashboard({
     setDeletingId(null);
   };
 
-  // Helper untuk merender preview gambar di dalam dashboard admin
   const renderStorageImage = (path) => {
     if (!path) return "";
-    if (path.startsWith("http")) return path; // untuk data seed placeholder
+    if (path.startsWith("http")) return path;
     return `https://pvybtfivfhnskbshwbbg.supabase.co/storage/v1/object/public/image/${path}`;
   };
 
