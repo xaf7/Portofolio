@@ -589,7 +589,7 @@ export default function App() {
       <section
         ref={heroRef}
         id="hero"
-        className={`w-full pt-28 sm:pt-36 md:pt-48 pb-16 sm:pb-24 px-4 sm:px-6 text-left transition-all duration-1000 transform ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-[#0B1120]" : "bg-white"}`}
+        className={`w-full pt-28 sm:pt-36 md:pt-48 pb-16 sm:pb-24 px-4 sm:px-6 text-left transition-all duration-1000 transform ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-[#15131E]" : "bg-white"}`}
       >
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
           <div>
