@@ -57,7 +57,7 @@ export default function AdminDashboard({
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  // Helper upload gambar ke Supabase Storage (Bucket: 'image')
+  // Helper upload berkas — Hanya mengembalikan path relatif (misal: 'uploads/file.png')
   const uploadImage = async (file) => {
     if (!file) return null;
     const fileExt = file.name.split(".").pop();
@@ -73,8 +73,8 @@ export default function AdminDashboard({
       return null;
     }
 
-    const { data } = supabase.storage.from("image").getPublicUrl(filePath);
-    return data.publicUrl;
+    // Mengembalikan path-nya saja agar sinkron dengan gabungan URL di App.jsx
+    return filePath;
   };
 
   // Handler Submit Projek
@@ -82,14 +82,13 @@ export default function AdminDashboard({
     e.preventDefault();
     setSubmitting(true);
 
-    let finalImageUrl = editingProject ? editingProject.image_url : "";
+    let finalImagePath = editingProject ? editingProject.image_url : "";
 
     if (projectFile) {
-      const uploadedUrl = await uploadImage(projectFile);
-      if (uploadedUrl) finalImageUrl = uploadedUrl;
+      const uploadedPath = await uploadImage(projectFile);
+      if (uploadedPath) finalImagePath = uploadedPath;
     }
 
-    // Format tanggal otomatis: "21 Jun 2026"
     const formattedDate = new Date().toLocaleDateString("en-GB", {
       day: "2-digit",
       month: "short",
@@ -99,13 +98,13 @@ export default function AdminDashboard({
     const payload = {
       title: projForm.title,
       category: projForm.category,
-      description: projForm.desc, // mapping dari form 'desc' ke kolom 'description'
+      description: projForm.desc,
       tech: projForm.tech,
       speed: projForm.speed,
       status: projForm.status,
       color: projForm.color,
       web_url: projForm.web_url || null,
-      image_url: finalImageUrl,
+      image_url: finalImagePath,
       date: editingProject ? editingProject.date : formattedDate,
     };
 
@@ -124,7 +123,7 @@ export default function AdminDashboard({
         resetProjectForm();
         setActiveTab("dashboard");
       } else if (error) {
-        alert("Gagal mengubah projek: " + error.message);
+        alert("Gagal merubah data: " + error.message);
       }
     } else {
       if (!projectFile) {
@@ -142,7 +141,7 @@ export default function AdminDashboard({
         resetProjectForm();
         setActiveTab("dashboard");
       } else if (error) {
-        alert("Gagal menambah projek: " + error.message);
+        alert("Gagal menambah data: " + error.message);
       }
     }
     setSubmitting(false);
@@ -167,20 +166,20 @@ export default function AdminDashboard({
     e.preventDefault();
     setSubmitting(true);
 
-    let finalAvatarUrl = editingTestimonial
+    let finalAvatarPath = editingTestimonial
       ? editingTestimonial.avatar_url
       : "";
 
     if (testimonialFile) {
-      const uploadedUrl = await uploadImage(testimonialFile);
-      if (uploadedUrl) finalAvatarUrl = uploadedUrl;
+      const uploadedPath = await uploadImage(testimonialFile);
+      if (uploadedPath) finalAvatarPath = uploadedPath;
     }
 
     const payload = {
       name: testiForm.name,
       company: testiForm.company,
       quote: testiForm.quote,
-      avatar_url: finalAvatarUrl,
+      avatar_url: finalAvatarPath,
     };
 
     if (editingTestimonial) {
@@ -200,7 +199,7 @@ export default function AdminDashboard({
         resetTestiForm();
         setActiveTab("dashboard");
       } else if (error) {
-        alert("Gagal mengubah testimoni: " + error.message);
+        alert("Gagal merubah data: " + error.message);
       }
     } else {
       if (!testimonialFile) {
@@ -218,7 +217,7 @@ export default function AdminDashboard({
         resetTestiForm();
         setActiveTab("dashboard");
       } else if (error) {
-        alert("Gagal menambah testimoni: " + error.message);
+        alert("Gagal menambah data: " + error.message);
       }
     }
     setSubmitting(false);
@@ -268,6 +267,13 @@ export default function AdminDashboard({
     const { error } = await supabase.from("testimonials").delete().eq("id", id);
     if (!error) setTestimonials(testimonials.filter((t) => t.id !== id));
     setDeletingId(null);
+  };
+
+  // Helper untuk merender preview gambar di dalam dashboard admin
+  const renderStorageImage = (path) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path; // untuk data seed placeholder
+    return `https://pvybtfivfhnskbshwbbg.supabase.co/storage/v1/object/public/image/${path}`;
   };
 
   return (
@@ -406,7 +412,6 @@ export default function AdminDashboard({
       {/* Konten Utama */}
       <div className="flex-1 md:pl-64 flex flex-col min-w-0">
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-          {/* TAB 1: DASHBOARD PANEL UTAMA */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -443,7 +448,6 @@ export default function AdminDashboard({
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Ringkasan Projek */}
                 <div
                   className={`p-6 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
                 >
@@ -458,7 +462,7 @@ export default function AdminDashboard({
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <img
-                            src={p.image_url}
+                            src={renderStorageImage(p.image_url)}
                             alt=""
                             className="w-10 h-10 object-cover rounded-lg bg-slate-800 flex-shrink-0"
                           />
@@ -495,7 +499,6 @@ export default function AdminDashboard({
                   </div>
                 </div>
 
-                {/* Ringkasan Testimoni */}
                 <div
                   className={`p-6 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
                 >
@@ -510,7 +513,7 @@ export default function AdminDashboard({
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <img
-                            src={t.avatar_url}
+                            src={renderStorageImage(t.avatar_url)}
                             alt=""
                             className="w-10 h-10 object-cover rounded-full bg-slate-800 flex-shrink-0"
                           />
@@ -550,7 +553,7 @@ export default function AdminDashboard({
             </div>
           )}
 
-          {/* TAB 2: FORM MANAJEMEN PROJEK */}
+          {/* TAB 2: PROJEK FORM */}
           {activeTab === "projects" && (
             <div
               className={`max-w-2xl p-6 md:p-8 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
@@ -706,7 +709,7 @@ export default function AdminDashboard({
             </div>
           )}
 
-          {/* TAB 3: FORM MANAJEMEN TESTIMONI */}
+          {/* TAB 3: TESTIMONI FORM */}
           {activeTab === "testimonials" && (
             <div
               className={`max-w-2xl p-6 md:p-8 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
@@ -743,7 +746,7 @@ export default function AdminDashboard({
                       onChange={(e) =>
                         setTestiForm({ ...testiForm, company: e.target.value })
                       }
-                      placeholder="CEO Toko Online, Mahasiswa"
+                      placeholder="CEO, Perusahaan"
                       className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
                     />
                   </div>
