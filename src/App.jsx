@@ -238,7 +238,6 @@ export default function App() {
   };
   const [viewMode, setViewMode] = useState(getInitialView);
 
-  // Cek apakah admin sudah punya session Supabase aktif (biar tidak perlu login ulang tiap buka ?admin=true)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
@@ -260,12 +259,6 @@ export default function App() {
   };
 
   const [currentIdx, setCurrentIdx] = useState(0);
-  // Lebar card testimoni responsif
-  const CARD_WIDTH_MOBILE =
-    typeof window !== "undefined" && window.innerWidth < 640
-      ? window.innerWidth * 0.85
-      : 440;
-  const CARD_GAP = 24;
 
   const chatbotGreeting = {
     welcome: t[lang].chatbot.welcome,
@@ -323,9 +316,6 @@ export default function App() {
   const [chatStep, setChatStep] = useState("welcome");
   const [selectedOption, setSelectedOption] = useState(null);
 
-  // Data testimoni & projek diambil LANGSUNG dari database Supabase
-  // sehingga semua pengunjung melihat data yang sama, dan perubahan
-  // dari Admin Dashboard langsung tersimpan permanen.
   const [testimonials, setTestimonials] = useState([]);
   const [projects, setProjects] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
@@ -487,11 +477,11 @@ export default function App() {
 
   return (
     <div
-      className={`w-full min-h-screen font-sans antialiased m-0 p-0 transition-colors duration-300 relative ${isDarkMode ? "bg-[#020408] text-slate-100" : "bg-white text-slate-900"}`}
+      className={`w-full min-h-screen font-sans antialiased m-0 p-0 transition-colors duration-300 relative ${isDarkMode ? "bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"}`}
     >
       {/* NAVBAR */}
       <nav
-        className={`fixed top-0 left-0 w-full z-50 px-4 lg:px-20 py-4 flex items-center justify-between border-b transition-colors duration-300 ${isDarkMode ? "bg-[#1d4ed8]/90 border-blue-700 text-white" : "bg-white border-blue-500 text-slate-900"} backdrop-blur-md`}
+        className={`fixed top-0 left-0 w-full z-50 px-4 lg:px-20 py-4 flex items-center justify-between border-b transition-colors duration-300 ${isDarkMode ? "bg-slate-900/90 border-slate-800 text-white" : "bg-white/90 border-slate-200 text-slate-900"} backdrop-blur-md`}
       >
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <img
@@ -504,18 +494,15 @@ export default function App() {
           </span>
         </div>
 
-        {/* Nav links — hidden on mobile */}
         <div
-          className={`hidden md:flex items-center gap-8 text-[12px] font-semibold tracking-wide transition-colors duration-300 ${isDarkMode ? "text-blue-100" : "text-slate-600"}`}
+          className={`hidden md:flex items-center gap-8 text-[12px] font-semibold tracking-wide transition-colors duration-300 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}
         >
-          {/* Tombol Home mengarah ke seksi hero */}
           <button
             onClick={() => scrollToSection("hero")}
             className="hover:text-blue-500 transition-colors"
           >
             {t[lang].nav.home}
           </button>
-
           <button
             onClick={() => scrollToSection("showcase")}
             className="hover:text-blue-500 transition-colors"
@@ -543,28 +530,25 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Tombol bahasa */}
           <button
             onClick={() => setLang(lang === "id" ? "en" : "id")}
-            className={`p-2 rounded-xl border transition-all flex items-center gap-1 text-[11px] font-bold ${isDarkMode ? "border-blue-500 hover:bg-blue-600 bg-blue-800 text-white" : "border-slate-200 hover:bg-slate-100 bg-white text-blue-600"}`}
+            className={`p-2 sm:px-3 rounded-xl border transition-all flex items-center gap-1 text-[11px] font-bold ${isDarkMode ? "border-slate-700 hover:bg-slate-800 bg-slate-900 text-slate-300" : "border-slate-200 hover:bg-slate-100 bg-white text-slate-600"}`}
             title="Switch Language"
           >
-            <Languages size={13} />
-            <span className="uppercase">{lang}</span>
+            <Languages size={14} />
+            <span className="uppercase hidden sm:inline">{lang}</span>
           </button>
 
-          {/* Tombol dark mode */}
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-2 rounded-xl border transition-all ${isDarkMode ? "border-blue-500 hover:bg-blue-600 bg-blue-800 text-yellow-400" : "border-slate-200 hover:bg-slate-100 bg-white text-slate-700"}`}
+            className={`p-2 rounded-xl border transition-all ${isDarkMode ? "border-slate-700 hover:bg-slate-800 bg-slate-900 text-yellow-400" : "border-slate-200 hover:bg-slate-100 bg-white text-slate-700"}`}
           >
             {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
           </button>
 
-          {/* Tombol Contact */}
           <button
             onClick={() => scrollToSection("brief")}
-            className={`px-3 sm:px-4 py-2 rounded-lg text-xs font-bold tracking-wide transition-all shadow-sm ${isDarkMode ? "bg-white text-blue-700 hover:bg-blue-50" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition-all shadow-sm ${isDarkMode ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
           >
             {t[lang].nav.contact}
           </button>
@@ -573,8 +557,9 @@ export default function App() {
 
       {/* HERO SECTION */}
       <section
+        id="hero"
         ref={heroRef}
-        className={`w-full pt-28 sm:pt-36 md:pt-48 pb-16 sm:pb-24 px-4 sm:px-6 text-left transition-all duration-1000 transform ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-transparent" : "bg-white"}`}
+        className={`w-full pt-28 sm:pt-36 md:pt-48 pb-16 sm:pb-24 px-4 sm:px-6 text-left transition-all duration-1000 transform ${heroVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
       >
         <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12 items-center">
           <div>
@@ -585,22 +570,22 @@ export default function App() {
               {t[lang].hero.badge}
             </div>
             <h1
-              className={`text-3xl sm:text-5xl md:text-6xl font-black tracking-tight mb-5 leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}
+              className={`text-4xl sm:text-5xl md:text-6xl font-black tracking-tight mb-5 leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}
             >
               {t[lang].hero.title1} <br />
               {t[lang].hero.title2}{" "}
-              <span className="text-blue-500 border-r-2 border-blue-500 pr-1 animate-pulse">
+              <span className="text-blue-600 border-r-2 border-blue-600 pr-1 animate-pulse">
                 {currentText}
               </span>
             </h1>
             <p
-              className={`text-sm max-w-md leading-relaxed mb-7 font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}
+              className={`text-sm sm:text-base max-w-md leading-relaxed mb-7 font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}
             >
               {t[lang].hero.desc}
             </p>
             <button
               onClick={() => scrollToSection("showcase")}
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 sm:px-6 py-3 rounded-lg text-xs font-black tracking-wide transition-all shadow-md transform hover:scale-105"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 sm:px-6 py-3 rounded-xl text-xs font-black tracking-wide transition-all shadow-md transform hover:scale-105"
             >
               {t[lang].hero.btn}
             </button>
@@ -610,47 +595,50 @@ export default function App() {
             <img
               src="./tes.png"
               alt="Hero Illustration"
-              className="w-full max-w-xs md:max-w-sm h-auto object-contain rounded-2xl drop-shadow-2xl"
+              className="w-full max-w-[260px] sm:max-w-xs md:max-w-sm h-auto object-contain rounded-2xl drop-shadow-2xl"
             />
           </div>
         </div>
       </section>
 
-      {/* PORTFOLIO SHOWCASE — INFINITE MARQUEE SLIDER */}
+      {/* PORTFOLIO SHOWCASE */}
       <section
         id="showcase"
         ref={showcaseRef}
-        className={`w-full py-16 sm:py-20 border-t border-b overflow-hidden transition-all duration-1000 transform ${showcaseVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-[#222831] border-slate-900" : "bg-[#112E81] border-blue-800"}`}
+        className={`w-full py-16 sm:py-20 border-t border-b overflow-hidden transition-all duration-1000 transform ${showcaseVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-8 sm:mb-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-8 sm:mb-10 text-center sm:text-left">
           <span
-            className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-blue-400" : "text-blue-200"}`}
+            className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}
           >
             {t[lang].showcase.badge}
           </span>
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-1 text-white">
+          <h2
+            className={`text-2xl sm:text-3xl font-black tracking-tight mt-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}
+          >
             {t[lang].showcase.title}
           </h2>
         </div>
 
-        {/* Container Utama Slider */}
         <div className="relative w-full overflow-hidden flex">
-          {/* Efek Blur Transparan Sinematik di Kiri dan Kanan Slider (Khusus Desktop) */}
-          <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#112E81] via-[#112E81]/40 to-transparent z-20 pointer-events-none hidden md:block dark:from-[#222831]"></div>
-          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#112E81] via-[#112E81]/40 to-transparent z-20 pointer-events-none hidden md:block dark:from-[#222831]"></div>
-          {/* Track Jalannya Animasi */}
+          {/* Overlay Blur (Desktop Only) */}
+          <div
+            className={`absolute inset-y-0 left-0 w-16 bg-gradient-to-r z-20 pointer-events-none hidden md:block ${isDarkMode ? "from-slate-900 via-slate-900/80 to-transparent" : "from-white via-white/80 to-transparent"}`}
+          ></div>
+          <div
+            className={`absolute inset-y-0 right-0 w-16 bg-gradient-to-l z-20 pointer-events-none hidden md:block ${isDarkMode ? "from-slate-900 via-slate-900/80 to-transparent" : "from-white via-white/80 to-transparent"}`}
+          ></div>
+
           <div className="animate-marquee-portfolio gap-4 sm:gap-6 px-4">
-            {/* Hanya memetakan data asli dari database tanpa duplikasi */}
             {projects.map((project, index) => (
               <div
                 key={`${project.id}-${index}`}
-                className="border border-slate-800/80 rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-all bg-[#13161c] hover:border-slate-700 shadow-2xl relative overflow-hidden group text-white w-[280px] sm:w-[380px] shrink-0"
+                className={`border rounded-2xl p-4 sm:p-6 flex flex-col justify-between transition-all shadow-xl relative overflow-hidden group w-[280px] sm:w-[380px] shrink-0 ${isDarkMode ? "bg-slate-800 border-slate-700 hover:border-slate-600" : "bg-slate-50 border-slate-200 hover:border-slate-300"}`}
               >
                 <div>
                   <div
                     className={`w-full rounded-xl bg-gradient-to-br ${project.color} flex flex-col justify-between text-white mb-4 sm:mb-6 shadow-inner relative overflow-hidden h-48 sm:h-60`}
                   >
-                    {/* Background Gambar Hasil Upload */}
                     {project.image_url && (
                       <div className="absolute inset-0 w-full h-full z-0 overflow-hidden">
                         <img
@@ -662,17 +650,15 @@ export default function App() {
                       </div>
                     )}
 
-                    {/* Header Kartu */}
                     <div className="flex items-start justify-between gap-3 z-10 w-full p-3 sm:p-4">
-                      <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight max-w-[65%] drop-shadow-md truncate-2-lines">
+                      <h3 className="text-xs sm:text-sm font-black tracking-tight leading-tight max-w-[65%] drop-shadow-md truncate-2-lines text-white">
                         {project.title}
                       </h3>
-                      <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider bg-black/40 px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap shrink-0 border border-white/10 backdrop-blur-sm">
+                      <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider bg-black/40 text-white px-2 py-0.5 sm:py-1 rounded-full whitespace-nowrap shrink-0 border border-white/10 backdrop-blur-sm">
                         {project.category}
                       </span>
                     </div>
 
-                    {/* Bar Navigasi Preview Tiruan */}
                     <div className="w-full opacity-95 transition-transform duration-500 group-hover:translate-y-[-4px] pointer-events-none flex flex-col justify-end z-10 mt-auto">
                       <div className="mx-3 mb-3 sm:mx-4 sm:mb-4 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xl flex items-center justify-between">
                         <div className="flex gap-1">
@@ -680,7 +666,7 @@ export default function App() {
                           <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
                           <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                         </div>
-                        <div className="text-[7px] sm:text-[8px] text-white/50 font-mono tracking-tight truncate w-24 sm:w-32 text-center">
+                        <div className="text-[7px] sm:text-[8px] text-white/70 font-mono tracking-tight truncate w-24 sm:w-32 text-center">
                           xaf7studio.com/preview
                         </div>
                         <div className="text-[7px] sm:text-[8px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
@@ -690,14 +676,19 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Deskripsi Projek */}
-                  <p className="text-[11px] sm:text-[12px] leading-relaxed mb-4 sm:mb-6 text-slate-300 line-clamp-3">
+                  <p
+                    className={`text-[11px] sm:text-[12px] leading-relaxed mb-4 sm:mb-6 line-clamp-3 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}
+                  >
                     {project.description || project.desc}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-slate-800/60">
-                  <span className="text-[9px] sm:text-[10px] px-2 py-0.5 sm:py-1 rounded-md font-mono border bg-slate-900 text-slate-300 border-slate-800">
+                <div
+                  className={`flex items-center justify-between pt-3 border-t ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}
+                >
+                  <span
+                    className={`text-[9px] sm:text-[10px] px-2 py-0.5 sm:py-1 rounded-md font-mono border ${isDarkMode ? "bg-slate-900 text-slate-300 border-slate-700" : "bg-slate-100 text-slate-600 border-slate-300"}`}
+                  >
                     {project.tech}
                   </span>
                   {project.web_url ? (
@@ -705,12 +696,12 @@ export default function App() {
                       href={project.web_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[11px] font-bold text-blue-400 hover:text-blue-300 hover:underline inline-flex items-center"
+                      className="text-[11px] font-bold text-blue-500 hover:text-blue-600 hover:underline inline-flex items-center"
                     >
                       {t[lang].showcase.testBtn}
                     </a>
                   ) : (
-                    <span className="text-[11px] font-bold text-slate-500 cursor-not-allowed">
+                    <span className="text-[11px] font-bold text-slate-400 cursor-not-allowed">
                       No Preview
                     </span>
                   )}
@@ -720,63 +711,80 @@ export default function App() {
           </div>
         </div>
       </section>
-      {/* SEKSI TESTIMONI — SLIDER COCOK UNTUK MOBILE & LAPTOP */}
+
+      {/* SEKSI TESTIMONI */}
       <section
         id="testimoni"
         ref={testimoniRef}
-        className={`w-full py-16 sm:py-20 overflow-hidden text-center transition-all duration-1000 transform ${testimoniVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-[#020408]" : "bg-[#ebf3fe]"}`}
+        className={`w-full py-16 sm:py-20 overflow-hidden text-center transition-all duration-1000 transform ${testimoniVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
       >
-        <div className="max-w-6xl mx-auto py-10 sm:py-12 rounded-3xl bg-[#13161c] border border-slate-800/80 shadow-2xl mx-3 sm:mx-4 lg:mx-auto text-white overflow-hidden">
+        <div
+          className={`max-w-6xl mx-auto py-10 sm:py-12 rounded-3xl border shadow-2xl mx-3 sm:mx-4 lg:mx-auto overflow-hidden ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}
+        >
           <div className="mb-4 px-4 sm:px-6">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white">
+            <h2
+              className={`text-2xl sm:text-3xl md:text-4xl font-black tracking-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}
+            >
               {t[lang].testimoni.title1}{" "}
-              <span className="text-blue-500">{t[lang].testimoni.title2}</span>
+              <span className="text-blue-600">{t[lang].testimoni.title2}</span>
             </h2>
           </div>
-          <p className="text-xs text-slate-400 max-w-md mx-auto mb-8 sm:mb-10 px-4 sm:px-6">
+          <p
+            className={`text-xs max-w-md mx-auto mb-8 sm:mb-10 px-4 sm:px-6 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}
+          >
             {t[lang].testimoni.desc}
           </p>
 
           <div className="w-full px-4 sm:px-6">
             <div className="w-full max-w-[320px] sm:max-w-[1416px] mx-auto overflow-hidden">
               <div
-                className="flex gap-6 items-stretch transition-transform duration-500 ease-out py-4"
+                className="flex gap-4 sm:gap-6 items-stretch transition-transform duration-500 ease-out py-4"
                 style={{
                   transform:
                     typeof window !== "undefined" && window.innerWidth < 640
-                      ? `translateX(calc(-${currentIdx} * (100% + 24px)))`
-                      : `translateX(-${currentIdx * 464}px)`,
+                      ? `translateX(calc(-${currentIdx} * (100% + 1rem)))` // 1rem = gap-4
+                      : `translateX(calc(-${currentIdx} * (440px + 1.5rem)))`, // 440px + gap-6
                 }}
               >
-                {testimonials.map((tItem, idx) => {
+                {testimonials.map((tItem) => {
                   return (
                     <div
                       key={tItem.id}
-                      className="w-full sm:w-[440px] shrink-0 border border-slate-800/80 rounded-2xl p-5 sm:p-6 text-left relative bg-[#1c1f26] flex flex-col justify-between min-h-[200px] sm:min-h-[220px] transition-all duration-300 hover:border-blue-500 text-white"
+                      className={`w-full sm:w-[440px] shrink-0 border rounded-2xl p-5 sm:p-6 text-left relative flex flex-col justify-between min-h-[200px] sm:min-h-[220px] transition-all duration-300 hover:border-blue-500 shadow-md ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}
                     >
                       <div>
-                        <div className="flex items-center gap-1 mb-3 text-orange-500">
+                        <div className="flex items-center gap-1 mb-3 text-orange-400">
                           {[...Array(5)].map((_, i) => (
                             <Star key={i} size={13} fill="currentColor" />
                           ))}
-                          <span className="text-[11px] font-bold text-slate-300 ml-1">
+                          <span
+                            className={`text-[11px] font-bold ml-1 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}
+                          >
                             5.0
                           </span>
                         </div>
-                        <p className="text-xs font-semibold leading-relaxed mb-5 sm:mb-6 text-white">
+                        <p
+                          className={`text-xs font-semibold leading-relaxed mb-5 sm:mb-6 ${isDarkMode ? "text-white" : "text-slate-800"}`}
+                        >
                           "{tItem.quote}"
                         </p>
                       </div>
-                      <div className="flex justify-between items-end border-t border-slate-800/60 pt-4">
+                      <div
+                        className={`flex justify-between items-end border-t pt-4 ${isDarkMode ? "border-slate-700" : "border-slate-200"}`}
+                      >
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-xs overflow-hidden uppercase">
                             {tItem.name.substring(0, 2)}
                           </div>
                           <div>
-                            <h4 className="text-xs font-black text-white">
+                            <h4
+                              className={`text-xs font-black ${isDarkMode ? "text-white" : "text-slate-900"}`}
+                            >
                               {tItem.name}
                             </h4>
-                            <p className="text-[10px] text-blue-400 font-bold">
+                            <p
+                              className={`text-[10px] font-bold ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}
+                            >
                               {tItem.company}
                             </p>
                           </div>
@@ -793,7 +801,7 @@ export default function App() {
             <button
               onClick={() => setCurrentIdx((prev) => Math.max(0, prev - 1))}
               disabled={currentIdx === 0}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border ${currentIdx === 0 ? "border-slate-800 text-slate-600 cursor-not-allowed bg-transparent" : "border-slate-700 text-white bg-blue-600 hover:bg-blue-700"}`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border ${currentIdx === 0 ? "border-slate-300 text-slate-400 cursor-not-allowed bg-transparent dark:border-slate-700 dark:text-slate-600" : "border-blue-600 text-white bg-blue-600 hover:bg-blue-700"}`}
             >
               <ArrowLeft size={16} />
             </button>
@@ -803,7 +811,7 @@ export default function App() {
                 <button
                   key={idx}
                   onClick={() => setCurrentIdx(idx)}
-                  className={`rounded-full transition-all duration-300 ${idx === currentIdx ? "w-5 h-2 bg-blue-500" : "w-2 h-2 bg-slate-600"}`}
+                  className={`rounded-full transition-all duration-300 ${idx === currentIdx ? "w-5 h-2 bg-blue-500" : "w-2 h-2 bg-slate-300 dark:bg-slate-700"}`}
                 />
               ))}
             </div>
@@ -815,50 +823,53 @@ export default function App() {
                 )
               }
               disabled={currentIdx === testimonials.length - 1}
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border ${currentIdx === testimonials.length - 1 ? "border-slate-800 text-slate-600 cursor-not-allowed bg-transparent" : "border-slate-700 text-white bg-blue-600 hover:bg-blue-700"}`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all border ${currentIdx === testimonials.length - 1 ? "border-slate-300 text-slate-400 cursor-not-allowed bg-transparent dark:border-slate-700 dark:text-slate-600" : "border-blue-600 text-white bg-blue-600 hover:bg-blue-700"}`}
             >
               <ArrowRight size={16} />
             </button>
           </div>
         </div>
       </section>
+
       {/* SEKSI BRIEF PROYEK */}
       <section
         id="brief"
         ref={briefRef}
-        className={`w-full py-16 sm:py-20 px-4 sm:px-6 border-t border-b transition-all duration-1000 transform ${briefVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-[#112E81] border-slate-900" : "bg-[#25343F] border-slate-800"}`}
+        className={`w-full py-16 sm:py-20 px-4 sm:px-6 border-t border-b transition-all duration-1000 transform ${briefVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"}`}
       >
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 sm:gap-12 items-center">
           <div className="text-left space-y-4">
             <span
-              className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-blue-400" : "text-blue-300"}`}
+              className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}
             >
               {t[lang].brief.badge}
             </span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white leading-tight">
+            <h2
+              className={`text-3xl sm:text-4xl font-black tracking-tight leading-tight ${isDarkMode ? "text-white" : "text-slate-900"}`}
+            >
               {t[lang].brief.title1} <br /> {t[lang].brief.title2}
             </h2>
             <p
-              className={`text-xs sm:text-sm leading-relaxed font-medium ${isDarkMode ? "text-slate-400" : "text-slate-300"}`}
+              className={`text-xs sm:text-sm leading-relaxed font-medium ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}
             >
               {t[lang].brief.desc}
             </p>
-            <div className="pt-2 flex items-center gap-2 text-[11px] font-bold text-blue-400">
+            <div className="pt-2 flex items-center gap-2 text-[11px] font-bold text-blue-600 dark:text-blue-400">
               <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping shrink-0"></span>
               {t[lang].brief.alert}
             </div>
           </div>
 
           <div
-            className={`w-full max-w-md mx-auto border rounded-2xl p-5 sm:p-6 shadow-xl transition-all ${isDarkMode ? "bg-[#0b0e14] border-white/10 text-white" : "bg-white border-blue-200 text-slate-900 shadow-md"}`}
+            className={`w-full max-w-md mx-auto border rounded-2xl p-5 sm:p-6 shadow-xl transition-all ${isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-slate-50 border-slate-200 text-slate-900"}`}
           >
-            <span className="text-[10px] font-black text-blue-600 uppercase block mb-3 tracking-wider">
+            <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase block mb-3 tracking-wider">
               {t[lang].brief.formTitle}
             </span>
             <div className="space-y-4 text-xs font-semibold">
               <div>
                 <label
-                  className={`block mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-800 font-bold"}`}
+                  className={`block mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-800 font-bold"}`}
                 >
                   {t[lang].brief.labelDomain}
                 </label>
@@ -869,13 +880,13 @@ export default function App() {
                     setBriefForm({ ...briefForm, domainName: e.target.value })
                   }
                   placeholder={t[lang].brief.placeholderDomain}
-                  className={`w-full border rounded-xl p-2.5 outline-none transition-all ${isDarkMode ? "bg-[#11141c] border-slate-800 text-white focus:border-blue-500" : "bg-white border-slate-200 text-slate-900 focus:border-blue-500"}`}
+                  className={`w-full border rounded-xl p-2.5 outline-none transition-all ${isDarkMode ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
                 />
               </div>
 
               <div>
                 <label
-                  className={`block mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-800 font-bold"}`}
+                  className={`block mb-1 ${isDarkMode ? "text-slate-300" : "text-slate-800 font-bold"}`}
                 >
                   {t[lang].brief.labelReq}
                 </label>
@@ -889,13 +900,12 @@ export default function App() {
                     })
                   }
                   placeholder={t[lang].brief.placeholderReq}
-                  className={`w-full border rounded-xl p-2.5 outline-none resize-none transition-all ${isDarkMode ? "bg-[#11141c] border-slate-800 text-white focus:border-blue-500" : "bg-white border-slate-200 text-slate-900 focus:border-blue-500"}`}
+                  className={`w-full border rounded-xl p-2.5 outline-none resize-none transition-all ${isDarkMode ? "bg-slate-900 border-slate-700 text-white focus:border-blue-500" : "bg-white border-slate-300 text-slate-900 focus:border-blue-500"}`}
                 ></textarea>
               </div>
 
-              {/* Teks Informasi Skema Harga Custom (Menggantikan Pilihan Estimasi Anggaran Lama) */}
               <div
-                className={`p-3.5 rounded-xl border flex flex-col gap-1 ${isDarkMode ? "bg-[#11141c] border-blue-900/50" : "bg-blue-50/70 border-blue-100"}`}
+                className={`p-3.5 rounded-xl border flex flex-col gap-1 ${isDarkMode ? "bg-slate-900 border-blue-900/50" : "bg-blue-50 border-blue-200"}`}
               >
                 <div className="flex justify-between items-center">
                   <span
@@ -904,30 +914,29 @@ export default function App() {
                     Harga Pengerjaan
                   </span>
                   <span
-                    className={`text-xs font-black px-2 py-0.5 rounded-md ${isDarkMode ? "bg-blue-950 text-blue-300" : "bg-blue-100 text-blue-700"}`}
+                    className={`text-xs font-black px-2 py-0.5 rounded-md ${isDarkMode ? "bg-blue-950 text-blue-300" : "bg-blue-200 text-blue-800"}`}
                   >
                     Mulai Rp 700k
                   </span>
                 </div>
                 <p
-                  className={`text-[10px] leading-relaxed font-medium mt-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}
+                  className={`text-[10px] leading-relaxed font-medium mt-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-600"}`}
                 >
                   Estimasi biaya akhir akan disesuaikan sepenuhnya berdasarkan
                   kompleksitas fitur dan kebutuhan sistem yang Anda inginkan.
                 </p>
               </div>
 
-              {/* Tombol Pengiriman */}
               <div className="grid grid-cols-2 gap-2 pt-2">
                 <button
                   onClick={handleSendWhatsApp}
-                  className="py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-[11px] shadow-lg shadow-emerald-500/10 transform hover:-translate-y-0.5 active:translate-y-0"
+                  className="py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-[11px] shadow-lg shadow-emerald-500/20 transform hover:-translate-y-0.5"
                 >
                   <MessageCircle size={14} /> {t[lang].brief.btnWA}
                 </button>
                 <button
                   onClick={handleSendGmail}
-                  className="py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-[11px] shadow-lg shadow-blue-500/10 transform hover:-translate-y-0.5 active:translate-y-0"
+                  className="py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all text-[11px] shadow-lg shadow-blue-500/20 transform hover:-translate-y-0.5"
                 >
                   <Mail size={14} /> {t[lang].brief.btnGmail}
                 </button>
@@ -941,16 +950,18 @@ export default function App() {
       <section
         id="faq"
         ref={faqRef}
-        className={`w-full py-20 px-4 sm:px-6 border-b transition-all duration-1000 transform ${faqVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-[#020408] border-slate-900" : "bg-[#112E81] border-blue-800"}`}
+        className={`w-full py-16 sm:py-20 px-4 sm:px-6 border-b transition-all duration-1000 transform ${faqVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"} ${isDarkMode ? "bg-slate-950 border-slate-900" : "bg-slate-50 border-slate-200"}`}
       >
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-10">
             <span
-              className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-blue-400" : "text-blue-200"}`}
+              className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? "text-blue-400" : "text-blue-600"}`}
             >
               {t[lang].faq.badge}
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight mt-1 text-white">
+            <h2
+              className={`text-2xl sm:text-3xl font-black tracking-tight mt-1 ${isDarkMode ? "text-white" : "text-slate-900"}`}
+            >
               {t[lang].faq.title}
             </h2>
           </div>
@@ -960,7 +971,7 @@ export default function App() {
               return (
                 <div
                   key={faq.id}
-                  className={`border rounded-2xl transition-all duration-300 overflow-hidden ${isDarkMode ? "bg-[#13161c] border-slate-800/80 hover:border-slate-700" : "bg-white border-blue-200/50 hover:border-blue-300"} ${isOpen ? "shadow-md" : ""}`}
+                  className={`border rounded-2xl transition-all duration-300 overflow-hidden ${isDarkMode ? "bg-slate-900 border-slate-800 hover:border-slate-700" : "bg-white border-slate-200 hover:border-slate-300"} ${isOpen ? "shadow-md" : ""}`}
                 >
                   <button
                     onClick={() => setActiveFaqId(isOpen ? null : faq.id)}
@@ -972,16 +983,16 @@ export default function App() {
                       {faq.question}
                     </span>
                     <span
-                      className={`p-1.5 rounded-xl transition-all ${isOpen ? "bg-blue-600/10 text-blue-600 rotate-180" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-blue-50 text-blue-600"}`}
+                      className={`p-1.5 rounded-xl transition-all ${isOpen ? "bg-blue-100 text-blue-600 rotate-180 dark:bg-blue-900/50 dark:text-blue-400" : isDarkMode ? "bg-slate-800 text-slate-400" : "bg-slate-100 text-slate-600"}`}
                     >
                       {isOpen ? <X size={14} /> : <Plus size={14} />}
                     </span>
                   </button>
                   <div
-                    className={`transition-all duration-300 ease-in-out ${isOpen ? (isDarkMode ? "max-h-40 border-t border-slate-800/60 bg-[#11141c]" : "max-h-40 border-t border-blue-100 bg-blue-50/40") : "max-h-0"}`}
+                    className={`transition-all duration-300 ease-in-out ${isOpen ? (isDarkMode ? "max-h-40 border-t border-slate-800 bg-slate-800/50" : "max-h-40 border-t border-slate-100 bg-slate-50") : "max-h-0"}`}
                   >
                     <p
-                      className={`p-5 sm:p-6 text-[11px] sm:text-xs leading-relaxed ${isDarkMode ? "text-slate-200 font-medium" : "text-slate-600"}`}
+                      className={`p-5 sm:p-6 text-[11px] sm:text-xs leading-relaxed ${isDarkMode ? "text-slate-300 font-medium" : "text-slate-600"}`}
                     >
                       {faq.answer}
                     </p>
@@ -995,10 +1006,9 @@ export default function App() {
 
       {/* FOOTER */}
       <footer
-        className={`w-full py-14 sm:py-16 px-4 sm:px-6 lg:px-20 border-t transition-colors duration-300 ${isDarkMode ? "bg-[#112E81] border-slate-900" : "bg-white border-blue-100"}`}
+        className={`w-full py-14 sm:py-16 px-4 sm:px-6 lg:px-20 border-t transition-colors duration-300 ${isDarkMode ? "bg-slate-950 border-slate-900" : "bg-white border-slate-200"}`}
       >
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12">
-          {/* Kolom 1: Profil Brand */}
           <div className="col-span-2 md:col-span-1 space-y-4">
             <div
               className={`font-bold text-sm font-mono flex items-center gap-2 ${isDarkMode ? "text-white" : "text-slate-900"}`}
@@ -1015,7 +1025,6 @@ export default function App() {
             </p>
           </div>
 
-          {/* Kolom 2: Navigasi */}
           <div>
             <h4
               className={`text-xs font-black uppercase tracking-wider mb-4 ${isDarkMode ? "text-white" : "text-slate-900"}`}
@@ -1052,7 +1061,6 @@ export default function App() {
             </ul>
           </div>
 
-          {/* Kolom 3: Kontak & Git */}
           <div>
             <h4
               className={`text-xs font-black uppercase tracking-wider mb-4 ${isDarkMode ? "text-white" : "text-slate-900"}`}
@@ -1067,8 +1075,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Kolom 4: Hubungi via WA */}
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <h4
               className={`text-xs font-black uppercase tracking-wider mb-4 ${isDarkMode ? "text-white" : "text-slate-900"}`}
             >
@@ -1089,11 +1096,10 @@ export default function App() {
               💬 Chat via WhatsApp
             </a>
           </div>
-        </div>{" "}
-        {/* <-- Penutup grid utama yang sebelumnya hilang */}
-        {/* Baris Hak Cipta & Ketentuan */}
+        </div>
+
         <div
-          className={`max-w-7xl mx-auto mt-10 sm:mt-12 pt-6 sm:pt-8 border-t flex flex-col md:flex-row justify-between items-center text-[10px] font-bold gap-3 sm:gap-4 ${isDarkMode ? "border-slate-900 text-slate-500" : "border-slate-100 text-slate-600"}`}
+          className={`max-w-7xl mx-auto mt-10 sm:mt-12 pt-6 sm:pt-8 border-t flex flex-col md:flex-row justify-between items-center text-[10px] font-bold gap-3 sm:gap-4 ${isDarkMode ? "border-slate-800 text-slate-500" : "border-slate-200 text-slate-500"}`}
         >
           <p>
             © {new Date().getFullYear()} {t[lang].footer.rights}
@@ -1108,10 +1114,11 @@ export default function App() {
           </div>
         </div>
       </footer>
+
       {/* CHATBOT */}
-      <div className="fixed bottom-5 right-4 sm:bottom-6 sm:right-6 z-50 font-sans">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 font-sans">
         {isChatOpen ? (
-          <div className="w-72 sm:w-80 h-[400px] sm:h-[420px] rounded-2xl bg-gradient-to-b from-indigo-900 to-blue-950 border border-blue-500/30 shadow-2xl p-4 flex flex-col justify-between text-white relative">
+          <div className="w-72 sm:w-80 h-[400px] sm:h-[420px] rounded-2xl bg-gradient-to-b from-indigo-900 to-slate-900 border border-blue-500/30 shadow-2xl p-4 flex flex-col justify-between text-white relative">
             <div className="flex items-center justify-between border-b border-white/10 pb-2">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-full bg-blue-600/30 flex items-center justify-center text-blue-400 border border-blue-500/20">
@@ -1154,7 +1161,7 @@ export default function App() {
                           setChatStep("selected");
                           setSelectedOption(item);
                         }}
-                        className="bg-white text-slate-900 hover:bg-blue-500 hover:text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-md transition-all border border-slate-200 text-right"
+                        className="bg-white text-slate-900 hover:bg-blue-600 hover:text-white hover:border-blue-600 px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-md transition-all border border-slate-200 text-right"
                       >
                         {item.label}
                       </button>
@@ -1191,13 +1198,13 @@ export default function App() {
               )}
             </div>
 
-            <div className="text-[9px] text-center text-white/33 border-t border-white/10 pt-2 font-bold tracking-wider uppercase">
+            <div className="text-[9px] text-center text-white/30 border-t border-white/10 pt-2 font-bold tracking-wider uppercase">
               Powered by XAF7 Engine
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-end gap-2 group">
-            <div className="bg-white text-slate-900 border border-slate-200 px-3 sm:px-4 py-2 rounded-2xl rounded-br-none shadow-xl text-xs font-black tracking-tight relative">
+            <div className="bg-white text-slate-900 border border-slate-200 px-3 sm:px-4 py-2 rounded-2xl rounded-br-none shadow-xl text-xs font-black tracking-tight relative hidden sm:block">
               {t[lang].chatbot.bubble}
               <div className="absolute right-3 -bottom-1.5 w-3 h-3 bg-white border-r border-b border-slate-200 rotate-45"></div>
             </div>
