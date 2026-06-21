@@ -15,7 +15,7 @@ import {
   X,
   Image as ImageIcon,
   Edit3,
-  ExternalLink, // 🌐 Menambahkan ikon baru untuk link eksternal web
+  ExternalLink,
 } from "lucide-react";
 import { supabase } from "./supabaseClient";
 
@@ -42,85 +42,91 @@ export default function AdminDashboard({
     speed: "98/100",
     status: "Production Ready",
     color: "from-blue-600 to-indigo-700",
-    image_url: "",
-    web_url: "", // 🌐 Menambahkan state default untuk link live preview web
+    web_url: "",
   });
 
   const [testiForm, setTestiForm] = useState({
-    quote: "",
     name: "",
     company: "",
-    tags: "SaaS Enterprise",
-    rating: "5.0",
-    avatar_url: "",
+    quote: "",
   });
 
-  const [savingProj, setSavingProj] = useState(false);
-  const [savingTesti, setSavingTesti] = useState(false);
+  // State baru untuk menampung file upload gambar
+  const [projectFile, setProjectFile] = useState(null);
+  const [testimonialFile, setTestimonialFile] = useState(null);
+
+  const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  // ==========================================
-  // FUNGSI TAMBAH / UPDATE PROJEK
-  // ==========================================
-  const handleSaveProject = async (e) => {
-    e.preventDefault();
-    setSavingProj(true);
+  // Fungsi helper untuk mengunggah berkas ke Supabase Storage
+  const uploadImage = async (file) => {
+    if (!file) return null;
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
 
-    const projData = {
-      title: projForm.title,
-      category: projForm.category,
-      date: new Date().toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }),
-      description: projForm.desc,
-      tech: projForm.tech,
-      speed: projForm.speed,
-      status: projForm.status,
-      color: projForm.color,
-      image_url: projForm.image_url,
-      web_url: projForm.web_url, // 🌐 Memasukkan web_url ke payload objek SQL Supabase
-    };
+    const { error: uploadError } = await supabase.storage
+      .from("project-images")
+      .upload(filePath, file);
+
+    if (uploadError) {
+      alert("Gagal mengunggah gambar: " + uploadError.message);
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from("project-images")
+      .getPublicUrl(filePath);
+    return data.publicUrl;
+  };
+
+  const handleProjectSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    let finalImageUrl = editingProject ? editingProject.image_url : "";
+
+    // Jika user memilih file baru, upload file tersebut
+    if (projectFile) {
+      const uploadedUrl = await uploadImage(projectFile);
+      if (uploadedUrl) finalImageUrl = uploadedUrl;
+    }
+
+    const payload = { ...projForm, image_url: finalImageUrl };
 
     if (editingProject) {
-      // MODE EDIT (UPDATE)
       const { data, error } = await supabase
         .from("projects")
-        .update(projData)
+        .update(payload)
         .eq("id", editingProject.id)
         .select();
 
-      setSavingProj(false);
-
-      if (error) {
-        alert("Gagal mengupdate database: " + error.message);
+      if (!error && data) {
+        setProjects(
+          projects.map((p) => (p.id === editingProject.id ? data[0] : p)),
+        );
+        setEditingProject(null);
+        resetProjectForm();
+      }
+    } else {
+      if (!projectFile) {
+        alert("Silakan pilih file foto terlebih dahulu untuk projek baru!");
+        setSubmitting(false);
         return;
       }
-
-      setProjects(
-        projects.map((p) => (p.id === editingProject.id ? data[0] : p)),
-      );
-      setEditingProject(null);
-      alert("Projek berhasil diperbarui!");
-    } else {
-      // MODE TAMBAH BARU (INSERT)
       const { data, error } = await supabase
         .from("projects")
-        .insert([projData])
+        .insert([payload])
         .select();
-
-      setSavingProj(false);
-
-      if (error) {
-        alert("Gagal menyimpan ke database: " + error.message);
-        return;
+      if (!error && data) {
+        setProjects([data[0], ...projects]);
+        resetProjectForm();
       }
-
-      setProjects([data[0], ...projects]);
-      alert("Projek berhasil dipublikasikan!");
     }
+    setSubmitting(false);
+  };
 
+  const resetProjectForm = () => {
     setProjForm({
       title: "",
       category: "",
@@ -129,368 +135,416 @@ export default function AdminDashboard({
       speed: "98/100",
       status: "Production Ready",
       color: "from-blue-600 to-indigo-700",
-      image_url: "",
-      web_url: "", // 🌐 Reset form url link web
+      web_url: "",
     });
+    setProjectFile(null);
   };
 
-  // Fungsi Masuk Mode Edit Projek
-  const startEditProject = (p) => {
-    setEditingProject(p);
-    setProjForm({
-      title: p.title || "",
-      category: p.category || "",
-      desc: p.description || p.desc || "",
-      tech: p.tech || "Laravel + React",
-      speed: p.speed || "98/100",
-      status: p.status || "Production Ready",
-      color: p.color || "from-blue-600 to-indigo-700",
-      image_url: p.image_url || "",
-      web_url: p.web_url || "", // 🌐 Mengambil data link web yang ada di baris database
-    });
-  };
-
-  const handleDeleteProject = async (id) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus projek ini?")) return;
-    setDeletingId(id);
-    const { error } = await supabase.from("projects").delete().eq("id", id);
-    setDeletingId(null);
-
-    if (error) {
-      alert("Gagal menghapus: " + error.message);
-      return;
-    }
-    setProjects(projects.filter((item) => item.id !== id));
-    if (editingProject?.id === id) setEditingProject(null);
-  };
-
-  // ==========================================
-  // FUNGSI TAMBAH / UPDATE TESTIMONIAL
-  // ==========================================
-  const handleSaveTestimonial = async (e) => {
+  const handleTestimonialSubmit = async (e) => {
     e.preventDefault();
-    setSavingTesti(true);
+    setSubmitting(true);
 
-    const testiData = {
-      quote: testiForm.quote,
-      name: testiForm.name,
-      company: testiForm.company,
-      tags: testiForm.tags,
-      rating: testiForm.rating,
-      avatar_url: testiForm.avatar_url, // FIX: Menyertakan avatar_url ke database Supabase
-    };
+    let finalAvatarUrl = editingTestimonial
+      ? editingTestimonial.avatar_url
+      : "";
+
+    if (testimonialFile) {
+      const uploadedUrl = await uploadImage(testimonialFile);
+      if (uploadedUrl) finalAvatarUrl = uploadedUrl;
+    }
+
+    const payload = { ...testiForm, avatar_url: finalAvatarUrl };
 
     if (editingTestimonial) {
       const { data, error } = await supabase
         .from("testimonials")
-        .update(testiData)
+        .update(payload)
         .eq("id", editingTestimonial.id)
         .select();
 
-      setSavingTesti(false);
-
-      if (error) {
-        alert("Gagal mengupdate database: " + error.message);
+      if (!error && data) {
+        setTestimonials(
+          testimonials.map((t) =>
+            t.id === editingTestimonial.id ? data[0] : t,
+          ),
+        );
+        setEditingTestimonial(null);
+        resetTestiForm();
+      }
+    } else {
+      if (!testimonialFile) {
+        alert("Silakan pilih file foto terlebih dahulu untuk testimoni baru!");
+        setSubmitting(false);
         return;
       }
-
-      setTestimonials(
-        testimonials.map((t) => (t.id === editingTestimonial.id ? data[0] : t)),
-      );
-      setEditingTestimonial(null);
-      alert("Testimoni berhasil diperbarui!");
-    } else {
       const { data, error } = await supabase
         .from("testimonials")
-        .insert([testiData])
+        .insert([payload])
         .select();
-
-      setSavingTesti(false);
-
-      if (error) {
-        alert("Gagal menyimpan ke database: " + error.message);
-        return;
+      if (!error && data) {
+        setTestimonials([data[0], ...testimonials]);
+        resetTestiForm();
       }
-
-      setTestimonials([data[0], ...testimonials]);
-      alert("Testimoni berhasil ditambahkan!");
     }
+    setSubmitting(false);
+  };
 
-    setTestiForm({
-      quote: "",
-      name: "",
-      company: "",
-      tags: "SaaS Enterprise",
-      rating: "5.0",
-      avatar_url: "",
+  const resetTestiForm = () => {
+    setTestiForm({ name: "", company: "", quote: "" });
+    setTestimonialFile(null);
+  };
+
+  const startEditProject = (p) => {
+    setEditingProject(p);
+    setProjForm({
+      title: p.title,
+      category: p.category,
+      desc: p.desc,
+      tech: p.tech,
+      speed: p.speed,
+      status: p.status,
+      color: p.color,
+      web_url: p.web_url || "",
     });
+    setActiveTab("projects");
   };
 
   const startEditTestimonial = (t) => {
     setEditingTestimonial(t);
     setTestiForm({
-      quote: t.quote || "",
-      name: t.name || "",
-      company: t.company || "",
-      tags: t.tags || "SaaS Enterprise",
-      rating: t.rating || "5.0",
-      avatar_url: t.avatar_url || "",
+      name: t.name,
+      company: t.company,
+      quote: t.quote,
     });
+    setActiveTab("testimonials");
+  };
+
+  const handleDeleteProject = async (id) => {
+    if (!confirm("Hapus projek ini?")) return;
+    setDeletingId(id);
+    const { error } = await supabase.from("projects").delete().eq("id", id);
+    if (!error) setProjects(projects.filter((p) => p.id !== id));
+    setDeletingId(null);
   };
 
   const handleDeleteTestimonial = async (id) => {
-    if (!confirm("Apakah Anda yakin ingin menghapus testimonial ini?")) return;
+    if (!confirm("Hapus testimoni ini?")) return;
     setDeletingId(id);
     const { error } = await supabase.from("testimonials").delete().eq("id", id);
+    if (!error) setTestimonials(testimonials.filter((t) => t.id !== id));
     setDeletingId(null);
-
-    if (error) {
-      alert("Gagal menghapus: " + error.message);
-      return;
-    }
-    setTestimonials(testimonials.filter((item) => item.id !== id));
-    if (editingTestimonial?.id === id) setEditingTestimonial(null);
   };
 
   return (
     <div
-      className={`w-full min-h-screen font-sans flex flex-col lg:flex-row transition-colors duration-300 ${isDarkMode ? "bg-[#181924] text-[#cfcfe0]" : "bg-[#f5f5f9] text-[#697a8d]"}`}
+      className={`min-h-screen flex ${isDarkMode ? "bg-[#0a0c10] text-white" : "bg-slate-100 text-slate-900"}`}
     >
-      {/* SIDEBAR NAVIGASI (DESKTOP) */}
-      <aside className="w-64 min-h-screen hidden lg:flex flex-col shrink-0 bg-blue-600 text-white shadow-xl">
-        <div className="h-16 flex items-center gap-3 px-6 border-b border-white/10">
-          <span className="text-xl font-bold tracking-tight text-white">
-            XAF7 STUDIO
-          </span>
+      {/* Sidebar Desktop */}
+      <aside
+        className={`w-64 fixed inset-y-0 left-0 z-20 hidden md:flex flex-col border-r ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
+      >
+        <div className="p-6 border-b border-inherit">
+          <h2 className="text-lg font-black tracking-wider uppercase text-blue-600">
+            XAF Admin
+          </h2>
         </div>
-
-        <div className="flex-1 px-4 py-6 space-y-1.5">
-          <div className="text-[11px] font-bold text-blue-200 uppercase tracking-wider px-3 mb-2 opacity-80">
-            Main
-          </div>
+        <nav className="flex-1 p-4 space-y-1.5">
           <button
             onClick={() => setActiveTab("dashboard")}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "dashboard" ? "bg-white text-blue-600 font-bold shadow-md" : "text-white/80 hover:bg-white/10"}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs transition-all ${activeTab === "dashboard" ? "bg-blue-600 text-white shadow-md" : isDarkMode ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-100 text-slate-600"}`}
           >
-            <LayoutDashboard size={18} />
-            <span>Dashboard</span>
-          </button>
-
-          <div className="pt-5 text-[11px] font-bold text-blue-200 uppercase tracking-wider px-3 mb-2 opacity-80">
-            Manajemen Data
-          </div>
-          <button
-            onClick={() => setActiveTab("projects")}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "projects" ? "bg-white text-blue-600 font-bold shadow-md" : "text-white/80 hover:bg-white/10"}`}
-          >
-            <Briefcase size={18} />
-            <span>Projek Kerja</span>
+            <LayoutDashboard size={16} /> Panel Utama
           </button>
           <button
-            onClick={() => setActiveTab("testimonials")}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${activeTab === "testimonials" ? "bg-white text-blue-600 font-bold shadow-md" : "text-white/80 hover:bg-white/10"}`}
+            onClick={() => {
+              setActiveTab("projects");
+              setEditingProject(null);
+              resetProjectForm();
+            }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs transition-all ${activeTab === "projects" ? "bg-blue-600 text-white shadow-md" : isDarkMode ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-100 text-slate-600"}`}
           >
-            <MessageSquare size={18} />
-            <span>Testimonial</span>
+            <FolderPlus size={16} /> Kelola Projek
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("testimonials");
+              setEditingTestimonial(null);
+              resetTestiForm();
+            }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-xs transition-all ${activeTab === "testimonials" ? "bg-blue-600 text-white shadow-md" : isDarkMode ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-100 text-slate-600"}`}
+          >
+            <MessageSquare size={16} /> Kelola Testimoni
+          </button>
+        </nav>
+        <div className="p-4 border-t border-inherit space-y-2">
+          <button
+            onClick={toggleDarkMode}
+            className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold ${isDarkMode ? "bg-slate-800 text-yellow-400" : "bg-slate-200 text-slate-700"}`}
+          >
+            {isDarkMode ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <Sun size={14} /> Mode Terang
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <Moon size={14} /> Mode Gelap
+                </div>
+              </>
+            )}
+          </button>
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-xs text-red-500 hover:bg-red-500/10 transition-all"
+          >
+            <LogOut size={16} /> Keluar Akun
           </button>
         </div>
       </aside>
 
-      {/* CONTENT WRAPPER */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Header Mobile & Konten */}
+      <div className="flex-1 md:pl-64 flex flex-col min-w-0">
         <header
-          className={`h-16 px-6 flex items-center justify-between sticky top-0 z-50 backdrop-blur border-b transition-colors duration-300 ${isDarkMode ? "bg-[#212330]/90 border-[#2d3042]" : "bg-white/90 border-slate-200"}`}
+          className={`p-4 flex items-center justify-between border-b md:border-none md:hidden ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
         >
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className={`p-2 rounded-lg lg:hidden transition-all ${isDarkMode ? "hover:bg-slate-700 text-white" : "hover:bg-slate-100 text-slate-700"}`}
-            >
-              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-            <span
-              className={`font-bold text-lg lg:hidden ${isDarkMode ? "text-white" : "text-slate-800"}`}
-            >
-              Xaf
-            </span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleDarkMode}
-              className={`p-2 rounded-lg border transition-all ${isDarkMode ? "border-[#434460] text-amber-400 bg-slate-800" : "border-slate-200 text-slate-600 bg-slate-50"}`}
-              title={isDarkMode ? "Mode Terang" : "Mode Malam"}
-            >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
-
-            <div className="h-8 w-px bg-slate-300 dark:bg-slate-700"></div>
-
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p
-                  className={`text-xs font-bold ${isDarkMode ? "text-white" : "text-[#566a7f]"}`}
-                >
-                  XAF7 ENGINE
-                </p>
-                <p className="text-[10px] text-slate-400">Admin Control</p>
-              </div>
-              <button
-                onClick={onLogout}
-                className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-all"
-              >
-                <LogOut size={16} />
-              </button>
-            </div>
-          </div>
+          <h2 className="text-sm font-black tracking-wider uppercase text-blue-600">
+            XAF Admin
+          </h2>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 rounded-xl"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </header>
 
-        {/* MOBILE MENU */}
+        {/* Menu Navigasi Mobile Dropdown */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden w-full bg-blue-600 text-white border-b border-blue-700 shadow-lg">
-            <div className="px-4 py-3 space-y-1 text-sm font-medium">
+          <div
+            className={`md:hidden border-b p-4 space-y-2 ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
+          >
+            <button
+              onClick={() => {
+                setActiveTab("dashboard");
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-xs ${activeTab === "dashboard" ? "bg-blue-600 text-white" : ""}`}
+            >
+              <LayoutDashboard size={14} /> Panel Utama
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("projects");
+                setEditingProject(null);
+                resetProjectForm();
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-xs ${activeTab === "projects" ? "bg-blue-600 text-white" : ""}`}
+            >
+              <FolderPlus size={14} /> Kelola Projek
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("testimonials");
+                setEditingTestimonial(null);
+                resetTestiForm();
+                setIsMobileMenuOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-xs ${activeTab === "testimonials" ? "bg-blue-600 text-white" : ""}`}
+            >
+              <MessageSquare size={14} /> Kelola Testimoni
+            </button>
+            <div className="pt-2 border-t border-slate-700/30 flex gap-2">
               <button
-                onClick={() => {
-                  setActiveTab("dashboard");
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left ${activeTab === "dashboard" ? "bg-white text-blue-600 font-bold" : "text-white/90"}`}
+                onClick={toggleDarkMode}
+                className="flex-1 py-2 bg-slate-800 text-center rounded-xl text-xs text-yellow-400 justify-center flex items-center gap-1"
               >
-                <LayoutDashboard size={16} /> Dashboard
+                {isDarkMode ? <Sun size={14} /> : <Moon size={14} />} Tema
               </button>
               <button
-                onClick={() => {
-                  setActiveTab("projects");
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left ${activeTab === "projects" ? "bg-white text-blue-600 font-bold" : "text-white/90"}`}
+                onClick={onLogout}
+                className="flex-1 py-2 bg-red-500/10 text-center rounded-xl text-xs font-bold text-red-500"
               >
-                <Briefcase size={16} /> Projek Kerja
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab("testimonials");
-                  setIsMobileMenuOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-left ${activeTab === "testimonials" ? "bg-white text-blue-600 font-bold" : "text-white/90"}`}
-              >
-                <MessageSquare size={16} /> Testimonial
+                Keluar
               </button>
             </div>
           </div>
         )}
 
-        {/* MAIN ROUTER PANELS */}
-        <main className="flex-1 p-6 space-y-6 overflow-y-auto max-w-7xl w-full mx-auto">
+        {/* Konten Utama */}
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
           {activeTab === "dashboard" && (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <div
-                className={`xl:col-span-2 p-6 rounded-xl shadow-sm flex flex-col justify-between ${isDarkMode ? "bg-[#212330]" : "bg-white"}`}
-              >
-                <div className="space-y-2">
-                  <h2
-                    className={`text-lg font-bold ${isDarkMode ? "text-white" : "text-blue-600"}`}
-                  >
-                    Selamat Datang Kembali, Administrator! 🎉
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    Sistem basis data portofolio real-time aman terkendali.
-                    Gunakan navigasi panel untuk merubah isi landing page.
-                  </p>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div
+                  className={`p-6 rounded-2xl border flex items-center gap-4 ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
+                >
+                  <div className="w-12 h-12 bg-blue-500/10 text-blue-500 rounded-xl flex items-center justify-center">
+                    <Briefcase size={22} />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 block">
+                      Total Projek
+                    </span>
+                    <span className="text-2xl font-black">
+                      {projects.length}
+                    </span>
+                  </div>
+                </div>
+                <div
+                  className={`p-6 rounded-2xl border flex items-center gap-4 ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
+                >
+                  <div className="w-12 h-12 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center">
+                    <UserCheck size={22} />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-400 block">
+                      Total Testimoni
+                    </span>
+                    <span className="text-2xl font-black">
+                      {testimonials.length}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* List Data Ringkas */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* List Projek */}
                 <div
-                  onClick={() => setActiveTab("projects")}
-                  className={`p-5 rounded-xl cursor-pointer border hover:border-blue-500/40 transition-all ${isDarkMode ? "bg-[#212330] border-transparent" : "bg-white"}`}
+                  className={`p-6 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
                 >
-                  <Briefcase className="text-blue-500" size={24} />
-                  <p className="text-xs text-slate-400 mt-2">Total Projek</p>
-                  <h3 className="text-2xl font-bold">{projects.length}</h3>
+                  <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-blue-500">
+                    Daftar Projek
+                  </h3>
+                  <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                    {projects.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between p-3 rounded-xl border border-dashed border-slate-700/50"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={p.image_url}
+                            alt=""
+                            className="w-10 h-10 object-cover rounded-lg bg-slate-800"
+                          />
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold block truncate">
+                              {p.title}
+                            </span>
+                            <span className="text-[10px] text-slate-400 truncate block">
+                              {p.category}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => startEditProject(p)}
+                            className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-lg"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProject(p.id)}
+                            disabled={deletingId === p.id}
+                            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg"
+                          >
+                            {deletingId === p.id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={14} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
+                {/* List Testimoni */}
                 <div
-                  onClick={() => setActiveTab("testimonials")}
-                  className={`p-5 rounded-xl cursor-pointer border hover:border-blue-500/40 transition-all ${isDarkMode ? "bg-[#212330] border-transparent" : "bg-white"}`}
+                  className={`p-6 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
                 >
-                  <UserCheck className="text-emerald-500" size={24} />
-                  <p className="text-xs text-slate-400 mt-2">Testimonial</p>
-                  <h3 className="text-2xl font-bold">{testimonials.length}</h3>
+                  <h3 className="text-sm font-black uppercase tracking-wider mb-4 text-emerald-500">
+                    Daftar Testimoni
+                  </h3>
+                  <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                    {testimonials.map((t) => (
+                      <div
+                        key={t.id}
+                        className="flex items-center justify-between p-3 rounded-xl border border-dashed border-slate-700/50"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={t.avatar_url}
+                            alt=""
+                            className="w-10 h-10 object-cover rounded-full bg-slate-800"
+                          />
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold block truncate">
+                              {t.name}
+                            </span>
+                            <span className="text-[10px] text-slate-400 truncate block">
+                              {t.company}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => startEditTestimonial(t)}
+                            className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-lg"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTestimonial(t.id)}
+                            disabled={deletingId === t.id}
+                            className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg"
+                          >
+                            {deletingId === t.id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={14} />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* PANEL PROJEK */}
           {activeTab === "projects" && (
             <div
-              className={`rounded-xl p-6 space-y-5 border ${isDarkMode ? "bg-[#212330] border-transparent" : "bg-white border-slate-100"}`}
+              className={`max-w-2xl p-6 md:p-8 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
             >
-              <div className="pb-3 border-b border-slate-500/10">
-                <h3 className="text-sm font-bold">
-                  {editingProject
-                    ? "⚡ Sunting Projek Aktif"
-                    : "➕ Tambahkan Postingan Projek"}
-                </h3>
-              </div>
-
-              <form
-                onSubmit={handleSaveProject}
-                className="space-y-4 text-xs font-semibold"
-              >
-                <div>
-                  <label className="block text-slate-400 mb-1">
-                    Judul Projek
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={projForm.title}
-                    onChange={(e) =>
-                      setProjForm({ ...projForm, title: e.target.value })
-                    }
-                    className={`w-full border rounded-lg px-3 py-2 outline-none ${isDarkMode ? "bg-[#181924] border-[#3a3c4f] text-white" : "bg-white border-slate-300"}`}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* FIELD INPUT URL FOTO WEB UNTUK PROJEK KERJA */}
+              <h3 className="text-base font-black mb-6">
+                {editingProject ? "✏️ Edit Projek" : "🚀 Tambah Projek Baru"}
+              </h3>
+              <form onSubmit={handleProjectSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-slate-400 mb-1 flex items-center gap-1">
-                      <ImageIcon size={12} /> URL Sampul / Foto Web Projek
+                    <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                      Judul Projek
                     </label>
                     <input
-                      type="url"
-                      placeholder="https://example.com/foto-web-projek.png"
-                      value={projForm.image_url}
+                      type="text"
+                      required
+                      value={projForm.title}
                       onChange={(e) =>
-                        setProjForm({ ...projForm, image_url: e.target.value })
+                        setProjForm({ ...projForm, title: e.target.value })
                       }
-                      className={`w-full border rounded-lg px-3 py-2 outline-none ${isDarkMode ? "bg-[#181924] border-[#3a3c4f] text-white" : "bg-white border-slate-300"}`}
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
                     />
                   </div>
-
-                  {/* 🌐 FIELD BARU: LIVE PREVIEW URL WEBSITE */}
                   <div>
-                    <label className="block text-slate-400 mb-1 flex items-center gap-1 text-blue-500">
-                      <ExternalLink size={12} /> Link Live Preview Web Aplikasi
-                    </label>
-                    <input
-                      type="url"
-                      placeholder="https://projek-kamu.com"
-                      value={projForm.web_url}
-                      onChange={(e) =>
-                        setProjForm({ ...projForm, web_url: e.target.value })
-                      }
-                      className={`w-full border rounded-lg px-3 py-2 outline-none ${isDarkMode ? "bg-[#181924] border-[#3a3c4f] text-blue-400 border-blue-500/30" : "bg-white border-slate-300"}`}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 mb-1">
-                      Kategori Sistem
+                    <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                      Kategori
                     </label>
                     <input
                       type="text"
@@ -499,195 +553,141 @@ export default function AdminDashboard({
                       onChange={(e) =>
                         setProjForm({ ...projForm, category: e.target.value })
                       }
-                      className={`w-full border rounded-lg px-3 py-2 outline-none ${isDarkMode ? "bg-[#181924] border-[#3a3c4f] text-white" : "bg-white border-slate-300"}`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 mb-1">
-                      Tech Stack
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={projForm.tech}
-                      onChange={(e) =>
-                        setProjForm({ ...projForm, tech: e.target.value })
-                      }
-                      className={`w-full border rounded-lg px-3 py-2 outline-none ${isDarkMode ? "bg-[#181924] border-[#3a3c4f] text-white" : "bg-white border-slate-300"}`}
+                      placeholder="Web App, Mobile, Backend"
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1">
-                    Deskripsi Singkat
+                  <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                    Deskripsi Projek
                   </label>
                   <textarea
-                    rows="3"
+                    rows={3}
                     required
                     value={projForm.desc}
                     onChange={(e) =>
                       setProjForm({ ...projForm, desc: e.target.value })
                     }
-                    className={`w-full border rounded-lg px-3 py-2 outline-none resize-none ${isDarkMode ? "bg-[#181924] border-[#3a3c4f] text-white" : "bg-white border-slate-300"}`}
+                    className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
                   ></textarea>
                 </div>
-
-                <div className="flex gap-2">
+                {/* INPUT UPLOAD FILE FOTO PROJEK */}
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                    Upload Foto Projek{" "}
+                    {editingProject && "(Kosongkan jika tidak ingin ganti)"}
+                  </label>
+                  <div
+                    className={`w-full p-4 border border-dashed rounded-xl flex flex-col items-center justify-center gap-2 ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                  >
+                    <ImageIcon size={24} className="text-slate-500" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setProjectFile(e.target.files[0])}
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                      Teknologi
+                    </label>
+                    <input
+                      type="text"
+                      value={projForm.tech}
+                      onChange={(e) =>
+                        setProjForm({ ...projForm, tech: e.target.value })
+                      }
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                      Skor Kecepatan
+                    </label>
+                    <input
+                      type="text"
+                      value={projForm.speed}
+                      onChange={(e) =>
+                        setProjForm({ ...projForm, speed: e.target.value })
+                      }
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                      Status
+                    </label>
+                    <input
+                      type="text"
+                      value={projForm.status}
+                      onChange={(e) =>
+                        setProjForm({ ...projForm, status: e.target.value })
+                      }
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                    URL Website (Opsional)
+                  </label>
+                  <input
+                    type="url"
+                    value={projForm.web_url}
+                    onChange={(e) =>
+                      setProjForm({ ...projForm, web_url: e.target.value })
+                    }
+                    placeholder="https://example.com"
+                    className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
                   <button
                     type="submit"
-                    disabled={savingProj}
-                    className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs tracking-wider flex items-center justify-center gap-2"
+                    disabled={submitting}
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-2"
                   >
-                    {savingProj ? (
+                    {submitting ? (
                       <Loader2 size={14} className="animate-spin" />
                     ) : (
-                      <Plus size={14} />
+                      "Simpan Projek"
                     )}
-                    {editingProject ? "PERBARUI PROJEK" : "PUBLIKASIKAN PROJEK"}
                   </button>
                   {editingProject && (
                     <button
                       type="button"
                       onClick={() => {
                         setEditingProject(null);
-                        setProjForm({
-                          title: "",
-                          category: "",
-                          desc: "",
-                          tech: "Laravel + React",
-                          speed: "98/100",
-                          status: "Production Ready",
-                          color: "from-blue-600 to-indigo-700",
-                          image_url: "",
-                          web_url: "",
-                        });
+                        resetProjectForm();
                       }}
-                      className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg"
+                      className="px-5 py-3 bg-slate-700 text-white rounded-xl text-xs font-bold uppercase"
                     >
                       Batal
                     </button>
                   )}
                 </div>
               </form>
-
-              {/* LIST DISPLAY */}
-              <div className="pt-4 border-t border-slate-500/10 space-y-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  List Projek ({projects.length})
-                </span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto">
-                  {projects.map((p) => (
-                    <div
-                      key={p.id}
-                      className={`p-3 rounded-lg border flex items-center justify-between text-[12px] ${isDarkMode ? "bg-[#181924] border-[#2d3042]" : "bg-[#f5f5f9]"}`}
-                    >
-                      <div className="flex items-center gap-3 truncate max-w-[70%]">
-                        {/* Menampilkan Preview Kecil Foto Web Projek */}
-                        {p.image_url && (
-                          <img
-                            src={p.image_url}
-                            alt=""
-                            className="w-10 h-7 rounded border object-cover shrink-0 bg-slate-200"
-                            onError={(e) => (e.target.style.display = "none")}
-                          />
-                        )}
-                        <div className="truncate">
-                          <span className="font-bold block truncate">
-                            {p.title}
-                          </span>
-                          <span className="text-[10px] text-slate-400 block truncate">
-                            {p.category}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1">
-                        {/* 🌐 TOMBOL TEST LINK BARU: klik untuk test link live preview langsung */}
-                        {p.web_url && (
-                          <a
-                            href={p.web_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-emerald-500 p-1.5 hover:bg-emerald-500/10 rounded-lg flex items-center"
-                            title="Test Live Preview"
-                          >
-                            <ExternalLink size={14} />
-                          </a>
-                        )}
-                        <button
-                          onClick={() => startEditProject(p)}
-                          className="text-blue-500 p-1.5 hover:bg-blue-500/10 rounded-lg"
-                          title="Edit"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteProject(p.id)}
-                          disabled={deletingId === p.id}
-                          className="text-red-500 p-1.5 hover:bg-red-500/10 rounded-lg"
-                        >
-                          {deletingId === p.id ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <Trash2 size={14} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
 
-          {/* PANEL TESTIMONIAL */}
           {activeTab === "testimonials" && (
             <div
-              className={`rounded-xl p-6 space-y-5 border ${isDarkMode ? "bg-[#212330] border-transparent" : "bg-white border-slate-100"}`}
+              className={`max-w-2xl p-6 md:p-8 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
             >
-              <div className="pb-3 border-b border-slate-500/10">
-                <h3 className="text-sm font-bold">
-                  {editingTestimonial
-                    ? "⚡ Sunting Testimonial"
-                    : "➕ Manajemen Komentar Testimoni"}
-                </h3>
-              </div>
-
-              <form
-                onSubmit={handleSaveTestimonial}
-                className="space-y-4 text-xs font-semibold"
-              >
-                <div>
-                  <label className="block text-slate-400 mb-1">
-                    Isi Komentar Ulasan
-                  </label>
-                  <textarea
-                    rows="3"
-                    required
-                    value={testiForm.quote}
-                    onChange={(e) =>
-                      setTestiForm({ ...testiForm, quote: e.target.value })
-                    }
-                    className={`w-full border rounded-lg px-3 py-2 outline-none resize-none ${isDarkMode ? "bg-[#181924] border-[#3a3c4f] text-white" : "bg-white border-slate-300"}`}
-                  ></textarea>
-                </div>
-                <div>
-                  <label className="block text-slate-400 mb-1 flex items-center gap-1">
-                    <ImageIcon size={12} /> URL Foto Web / Avatar
-                  </label>
-                  <input
-                    type="url"
-                    value={testiForm.avatar_url}
-                    onChange={(e) =>
-                      setTestiForm({ ...testiForm, avatar_url: e.target.value })
-                    }
-                    className={`w-full border rounded-lg px-3 py-2 outline-none ${isDarkMode ? "bg-[#181924] border-[#3a3c4f] text-white" : "bg-white border-slate-300"}`}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
+              <h3 className="text-base font-black mb-6">
+                {editingTestimonial
+                  ? "✏️ Edit Testimoni"
+                  : "💬 Tambah Testimoni Baru"}
+              </h3>
+              <form onSubmit={handleTestimonialSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-slate-400 mb-1">
-                      Nama Klien
+                    <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                      Nama Lengkap
                     </label>
                     <input
                       type="text"
@@ -696,12 +696,12 @@ export default function AdminDashboard({
                       onChange={(e) =>
                         setTestiForm({ ...testiForm, name: e.target.value })
                       }
-                      className={`w-full border rounded-lg px-3 py-2 outline-none ${isDarkMode ? "bg-[#181924] border-[#3a3c4f] text-white" : "bg-white border-slate-300"}`}
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1">
-                      Perusahaan / Institusi
+                    <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                      Perusahaan / Instansi
                     </label>
                     <input
                       type="text"
@@ -710,101 +710,69 @@ export default function AdminDashboard({
                       onChange={(e) =>
                         setTestiForm({ ...testiForm, company: e.target.value })
                       }
-                      className={`w-full border rounded-lg px-3 py-2 outline-none ${isDarkMode ? "bg-[#181924] border-[#3a3c4f] text-white" : "bg-white border-slate-300"}`}
+                      placeholder="CEO Toko Online, Mahasiswa"
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
                     />
                   </div>
                 </div>
-
-                <div className="flex gap-2">
+                {/* INPUT UPLOAD FILE FOTO TESTIMONI */}
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                    Upload Foto Profil{" "}
+                    {editingTestimonial && "(Kosongkan jika tidak ingin ganti)"}
+                  </label>
+                  <div
+                    className={`w-full p-4 border border-dashed rounded-xl flex flex-col items-center justify-center gap-2 ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                  >
+                    <ImageIcon size={24} className="text-slate-500" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setTestimonialFile(e.target.files[0])}
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
+                    Isi Testimoni
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={testiForm.quote}
+                    onChange={(e) =>
+                      setTestiForm({ ...testiForm, quote: e.target.value })
+                    }
+                    className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                  ></textarea>
+                </div>
+                <div className="flex gap-3 pt-2">
                   <button
                     type="submit"
-                    disabled={savingTesti}
-                    className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs tracking-wider flex items-center justify-center gap-2"
+                    disabled={submitting}
+                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs uppercase flex items-center justify-center gap-2"
                   >
-                    {savingTesti ? (
+                    {submitting ? (
                       <Loader2 size={14} className="animate-spin" />
                     ) : (
-                      <Plus size={14} />
+                      "Simpan Testimoni"
                     )}
-                    {editingTestimonial
-                      ? "PERBARUI TESTIMONIAL"
-                      : "PUBLIKASIKAN TESTIMONI"}
                   </button>
                   {editingTestimonial && (
                     <button
                       type="button"
                       onClick={() => {
                         setEditingTestimonial(null);
-                        setTestiForm({
-                          quote: "",
-                          name: "",
-                          company: "",
-                          tags: "SaaS Enterprise",
-                          rating: "5.0",
-                          avatar_url: "",
-                        });
+                        resetTestiForm();
                       }}
-                      className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg"
+                      className="px-5 py-3 bg-slate-700 text-white rounded-xl text-xs font-bold uppercase"
                     >
                       Batal
                     </button>
                   )}
                 </div>
               </form>
-
-              {/* LIST DISPLAY TESTI */}
-              <div className="pt-4 border-t border-slate-500/10 space-y-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  List Testimoni ({testimonials.length})
-                </span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto">
-                  {testimonials.map((t) => (
-                    <div
-                      key={t.id}
-                      className={`p-3 rounded-lg border flex items-center justify-between text-[11px] ${isDarkMode ? "bg-[#181924] border-[#2d3042]" : "bg-[#f5f5f9]"}`}
-                    >
-                      <div className="flex items-center gap-2 truncate max-w-[80%]">
-                        {t.avatar_url && (
-                          <img
-                            src={t.avatar_url}
-                            alt=""
-                            className="w-7 h-7 rounded-full object-cover shrink-0"
-                            onError={(e) => (e.target.style.display = "none")}
-                          />
-                        )}
-                        <div className="truncate">
-                          <span className="text-slate-400 italic block truncate">
-                            "{t.quote}"
-                          </span>
-                          <span className="text-[10px] font-semibold text-blue-500 block">
-                            {t.name} — {t.company}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => startEditTestimonial(t)}
-                          className="text-blue-500 p-1.5 hover:bg-blue-500/10 rounded-lg"
-                          title="Edit"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTestimonial(t.id)}
-                          disabled={deletingId === t.id}
-                          className="text-red-500 p-1.5 hover:bg-red-500/10 rounded-lg"
-                        >
-                          {deletingId === t.id ? (
-                            <Loader2 size={14} className="animate-spin" />
-                          ) : (
-                            <Trash2 size={14} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           )}
         </main>
