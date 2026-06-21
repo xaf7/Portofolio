@@ -51,22 +51,21 @@ export default function AdminDashboard({
     quote: "",
   });
 
-  // State baru untuk menampung file upload gambar
   const [projectFile, setProjectFile] = useState(null);
   const [testimonialFile, setTestimonialFile] = useState(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
 
-  // Fungsi helper untuk mengunggah berkas ke Supabase Storage
+  // Helper upload gambar ke Supabase Storage (Bucket: 'image')
   const uploadImage = async (file) => {
     if (!file) return null;
     const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random()}.${fileExt}`;
+    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `uploads/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("project-images")
+      .from("image")
       .upload(filePath, file);
 
     if (uploadError) {
@@ -74,25 +73,41 @@ export default function AdminDashboard({
       return null;
     }
 
-    const { data } = supabase.storage
-      .from("project-images")
-      .getPublicUrl(filePath);
+    const { data } = supabase.storage.from("image").getPublicUrl(filePath);
     return data.publicUrl;
   };
 
+  // Handler Submit Projek
   const handleProjectSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
 
     let finalImageUrl = editingProject ? editingProject.image_url : "";
 
-    // Jika user memilih file baru, upload file tersebut
     if (projectFile) {
       const uploadedUrl = await uploadImage(projectFile);
       if (uploadedUrl) finalImageUrl = uploadedUrl;
     }
 
-    const payload = { ...projForm, image_url: finalImageUrl };
+    // Format tanggal otomatis: "21 Jun 2026"
+    const formattedDate = new Date().toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+    const payload = {
+      title: projForm.title,
+      category: projForm.category,
+      description: projForm.desc, // mapping dari form 'desc' ke kolom 'description'
+      tech: projForm.tech,
+      speed: projForm.speed,
+      status: projForm.status,
+      color: projForm.color,
+      web_url: projForm.web_url || null,
+      image_url: finalImageUrl,
+      date: editingProject ? editingProject.date : formattedDate,
+    };
 
     if (editingProject) {
       const { data, error } = await supabase
@@ -107,6 +122,9 @@ export default function AdminDashboard({
         );
         setEditingProject(null);
         resetProjectForm();
+        setActiveTab("dashboard");
+      } else if (error) {
+        alert("Gagal mengubah projek: " + error.message);
       }
     } else {
       if (!projectFile) {
@@ -118,9 +136,13 @@ export default function AdminDashboard({
         .from("projects")
         .insert([payload])
         .select();
+
       if (!error && data) {
         setProjects([data[0], ...projects]);
         resetProjectForm();
+        setActiveTab("dashboard");
+      } else if (error) {
+        alert("Gagal menambah projek: " + error.message);
       }
     }
     setSubmitting(false);
@@ -140,6 +162,7 @@ export default function AdminDashboard({
     setProjectFile(null);
   };
 
+  // Handler Submit Testimoni
   const handleTestimonialSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -153,7 +176,12 @@ export default function AdminDashboard({
       if (uploadedUrl) finalAvatarUrl = uploadedUrl;
     }
 
-    const payload = { ...testiForm, avatar_url: finalAvatarUrl };
+    const payload = {
+      name: testiForm.name,
+      company: testiForm.company,
+      quote: testiForm.quote,
+      avatar_url: finalAvatarUrl,
+    };
 
     if (editingTestimonial) {
       const { data, error } = await supabase
@@ -170,6 +198,9 @@ export default function AdminDashboard({
         );
         setEditingTestimonial(null);
         resetTestiForm();
+        setActiveTab("dashboard");
+      } else if (error) {
+        alert("Gagal mengubah testimoni: " + error.message);
       }
     } else {
       if (!testimonialFile) {
@@ -181,9 +212,13 @@ export default function AdminDashboard({
         .from("testimonials")
         .insert([payload])
         .select();
+
       if (!error && data) {
         setTestimonials([data[0], ...testimonials]);
         resetTestiForm();
+        setActiveTab("dashboard");
+      } else if (error) {
+        alert("Gagal menambah testimoni: " + error.message);
       }
     }
     setSubmitting(false);
@@ -199,7 +234,7 @@ export default function AdminDashboard({
     setProjForm({
       title: p.title,
       category: p.category,
-      desc: p.desc,
+      desc: p.description,
       tech: p.tech,
       speed: p.speed,
       status: p.status,
@@ -237,7 +272,7 @@ export default function AdminDashboard({
 
   return (
     <div
-      className={`min-h-screen flex ${isDarkMode ? "bg-[#0a0c10] text-white" : "bg-slate-100 text-slate-900"}`}
+      className={`min-h-screen flex flex-col md:flex-row ${isDarkMode ? "bg-[#0a0c10] text-white" : "bg-slate-100 text-slate-900"}`}
     >
       {/* Sidebar Desktop */}
       <aside
@@ -282,17 +317,13 @@ export default function AdminDashboard({
             className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold ${isDarkMode ? "bg-slate-800 text-yellow-400" : "bg-slate-200 text-slate-700"}`}
           >
             {isDarkMode ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <Sun size={14} /> Mode Terang
-                </div>
-              </>
+              <div className="flex items-center gap-2">
+                <Sun size={14} /> Mode Terang
+              </div>
             ) : (
-              <>
-                <div className="flex items-center gap-2">
-                  <Moon size={14} /> Mode Gelap
-                </div>
-              </>
+              <div className="flex items-center gap-2">
+                <Moon size={14} /> Mode Gelap
+              </div>
             )}
           </button>
           <button
@@ -304,77 +335,78 @@ export default function AdminDashboard({
         </div>
       </aside>
 
-      {/* Header Mobile & Konten */}
-      <div className="flex-1 md:pl-64 flex flex-col min-w-0">
-        <header
-          className={`p-4 flex items-center justify-between border-b md:border-none md:hidden ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
+      {/* Header Mobile */}
+      <header
+        className={`p-4 flex items-center justify-between border-b md:hidden sticky top-0 z-30 ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
+      >
+        <h2 className="text-sm font-black tracking-wider uppercase text-blue-600">
+          XAF Admin
+        </h2>
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 rounded-xl border border-slate-700/30"
         >
-          <h2 className="text-sm font-black tracking-wider uppercase text-blue-600">
-            XAF Admin
-          </h2>
+          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+      </header>
+
+      {/* Dropdown Menu Mobile */}
+      {isMobileMenuOpen && (
+        <div
+          className={`md:hidden border-b p-4 space-y-2 fixed top-[61px] left-0 right-0 z-20 shadow-xl ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
+        >
           <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 rounded-xl"
+            onClick={() => {
+              setActiveTab("dashboard");
+              setIsMobileMenuOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-xs ${activeTab === "dashboard" ? "bg-blue-600 text-white" : ""}`}
           >
-            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            <LayoutDashboard size={14} /> Panel Utama
           </button>
-        </header>
-
-        {/* Menu Navigasi Mobile Dropdown */}
-        {isMobileMenuOpen && (
-          <div
-            className={`md:hidden border-b p-4 space-y-2 ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
+          <button
+            onClick={() => {
+              setActiveTab("projects");
+              setEditingProject(null);
+              resetProjectForm();
+              setIsMobileMenuOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-xs ${activeTab === "projects" ? "bg-blue-600 text-white" : ""}`}
           >
+            <FolderPlus size={14} /> Kelola Projek
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("testimonials");
+              setEditingTestimonial(null);
+              resetTestiForm();
+              setIsMobileMenuOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-xs ${activeTab === "testimonials" ? "bg-blue-600 text-white" : ""}`}
+          >
+            <MessageSquare size={14} /> Kelola Testimoni
+          </button>
+          <div className="pt-2 border-t border-slate-700/30 flex gap-2">
             <button
-              onClick={() => {
-                setActiveTab("dashboard");
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-xs ${activeTab === "dashboard" ? "bg-blue-600 text-white" : ""}`}
+              onClick={toggleDarkMode}
+              className="flex-1 py-2 bg-slate-800 text-center rounded-xl text-xs text-yellow-400 justify-center flex items-center gap-1"
             >
-              <LayoutDashboard size={14} /> Panel Utama
+              {isDarkMode ? <Sun size={14} /> : <Moon size={14} />} Tema
             </button>
             <button
-              onClick={() => {
-                setActiveTab("projects");
-                setEditingProject(null);
-                resetProjectForm();
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-xs ${activeTab === "projects" ? "bg-blue-600 text-white" : ""}`}
+              onClick={onLogout}
+              className="flex-1 py-2 bg-red-500/10 text-center rounded-xl text-xs font-bold text-red-500"
             >
-              <FolderPlus size={14} /> Kelola Projek
+              Keluar
             </button>
-            <button
-              onClick={() => {
-                setActiveTab("testimonials");
-                setEditingTestimonial(null);
-                resetTestiForm();
-                setIsMobileMenuOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-bold text-xs ${activeTab === "testimonials" ? "bg-blue-600 text-white" : ""}`}
-            >
-              <MessageSquare size={14} /> Kelola Testimoni
-            </button>
-            <div className="pt-2 border-t border-slate-700/30 flex gap-2">
-              <button
-                onClick={toggleDarkMode}
-                className="flex-1 py-2 bg-slate-800 text-center rounded-xl text-xs text-yellow-400 justify-center flex items-center gap-1"
-              >
-                {isDarkMode ? <Sun size={14} /> : <Moon size={14} />} Tema
-              </button>
-              <button
-                onClick={onLogout}
-                className="flex-1 py-2 bg-red-500/10 text-center rounded-xl text-xs font-bold text-red-500"
-              >
-                Keluar
-              </button>
-            </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Konten Utama */}
+      {/* Konten Utama */}
+      <div className="flex-1 md:pl-64 flex flex-col min-w-0">
         <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+          {/* TAB 1: DASHBOARD PANEL UTAMA */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -410,9 +442,8 @@ export default function AdminDashboard({
                 </div>
               </div>
 
-              {/* List Data Ringkas */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* List Projek */}
+                {/* Ringkasan Projek */}
                 <div
                   className={`p-6 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
                 >
@@ -429,7 +460,7 @@ export default function AdminDashboard({
                           <img
                             src={p.image_url}
                             alt=""
-                            className="w-10 h-10 object-cover rounded-lg bg-slate-800"
+                            className="w-10 h-10 object-cover rounded-lg bg-slate-800 flex-shrink-0"
                           />
                           <div className="min-w-0">
                             <span className="text-xs font-bold block truncate">
@@ -464,7 +495,7 @@ export default function AdminDashboard({
                   </div>
                 </div>
 
-                {/* List Testimoni */}
+                {/* Ringkasan Testimoni */}
                 <div
                   className={`p-6 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
                 >
@@ -481,7 +512,7 @@ export default function AdminDashboard({
                           <img
                             src={t.avatar_url}
                             alt=""
-                            className="w-10 h-10 object-cover rounded-full bg-slate-800"
+                            className="w-10 h-10 object-cover rounded-full bg-slate-800 flex-shrink-0"
                           />
                           <div className="min-w-0">
                             <span className="text-xs font-bold block truncate">
@@ -519,6 +550,7 @@ export default function AdminDashboard({
             </div>
           )}
 
+          {/* TAB 2: FORM MANAJEMEN PROJEK */}
           {activeTab === "projects" && (
             <div
               className={`max-w-2xl p-6 md:p-8 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
@@ -539,7 +571,7 @@ export default function AdminDashboard({
                       onChange={(e) =>
                         setProjForm({ ...projForm, title: e.target.value })
                       }
-                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
                     />
                   </div>
                   <div>
@@ -554,7 +586,7 @@ export default function AdminDashboard({
                         setProjForm({ ...projForm, category: e.target.value })
                       }
                       placeholder="Web App, Mobile, Backend"
-                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
                     />
                   </div>
                 </div>
@@ -569,14 +601,13 @@ export default function AdminDashboard({
                     onChange={(e) =>
                       setProjForm({ ...projForm, desc: e.target.value })
                     }
-                    className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                    className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
                   ></textarea>
                 </div>
-                {/* INPUT UPLOAD FILE FOTO PROJEK */}
                 <div>
                   <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
                     Upload Foto Projek{" "}
-                    {editingProject && "(Kosongkan jika tidak ingin ganti)"}
+                    {editingProject && "(Kosongkan jika tidak diganti)"}
                   </label>
                   <div
                     className={`w-full p-4 border border-dashed rounded-xl flex flex-col items-center justify-center gap-2 ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
@@ -586,7 +617,7 @@ export default function AdminDashboard({
                       type="file"
                       accept="image/*"
                       onChange={(e) => setProjectFile(e.target.files[0])}
-                      className="text-xs"
+                      className="text-xs max-w-full"
                     />
                   </div>
                 </div>
@@ -601,7 +632,7 @@ export default function AdminDashboard({
                       onChange={(e) =>
                         setProjForm({ ...projForm, tech: e.target.value })
                       }
-                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
                     />
                   </div>
                   <div>
@@ -614,7 +645,7 @@ export default function AdminDashboard({
                       onChange={(e) =>
                         setProjForm({ ...projForm, speed: e.target.value })
                       }
-                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
                     />
                   </div>
                   <div>
@@ -627,7 +658,7 @@ export default function AdminDashboard({
                       onChange={(e) =>
                         setProjForm({ ...projForm, status: e.target.value })
                       }
-                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
                     />
                   </div>
                 </div>
@@ -642,7 +673,7 @@ export default function AdminDashboard({
                       setProjForm({ ...projForm, web_url: e.target.value })
                     }
                     placeholder="https://example.com"
-                    className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                    className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
                   />
                 </div>
                 <div className="flex gap-3 pt-2">
@@ -663,6 +694,7 @@ export default function AdminDashboard({
                       onClick={() => {
                         setEditingProject(null);
                         resetProjectForm();
+                        setActiveTab("dashboard");
                       }}
                       className="px-5 py-3 bg-slate-700 text-white rounded-xl text-xs font-bold uppercase"
                     >
@@ -674,6 +706,7 @@ export default function AdminDashboard({
             </div>
           )}
 
+          {/* TAB 3: FORM MANAJEMEN TESTIMONI */}
           {activeTab === "testimonials" && (
             <div
               className={`max-w-2xl p-6 md:p-8 rounded-2xl border ${isDarkMode ? "bg-[#13161c] border-slate-800" : "bg-white border-slate-200"}`}
@@ -696,7 +729,7 @@ export default function AdminDashboard({
                       onChange={(e) =>
                         setTestiForm({ ...testiForm, name: e.target.value })
                       }
-                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
                     />
                   </div>
                   <div>
@@ -711,15 +744,14 @@ export default function AdminDashboard({
                         setTestiForm({ ...testiForm, company: e.target.value })
                       }
                       placeholder="CEO Toko Online, Mahasiswa"
-                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                      className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
                     />
                   </div>
                 </div>
-                {/* INPUT UPLOAD FILE FOTO TESTIMONI */}
                 <div>
                   <label className="block text-xs font-bold uppercase mb-1 text-slate-400">
                     Upload Foto Profil{" "}
-                    {editingTestimonial && "(Kosongkan jika tidak ingin ganti)"}
+                    {editingTestimonial && "(Kosongkan jika tidak diganti)"}
                   </label>
                   <div
                     className={`w-full p-4 border border-dashed rounded-xl flex flex-col items-center justify-center gap-2 ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
@@ -729,7 +761,7 @@ export default function AdminDashboard({
                       type="file"
                       accept="image/*"
                       onChange={(e) => setTestimonialFile(e.target.files[0])}
-                      className="text-xs"
+                      className="text-xs max-w-full"
                     />
                   </div>
                 </div>
@@ -744,7 +776,7 @@ export default function AdminDashboard({
                     onChange={(e) =>
                       setTestiForm({ ...testiForm, quote: e.target.value })
                     }
-                    className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800" : "bg-slate-50 border-slate-300"}`}
+                    className={`w-full p-3 rounded-xl border outline-none text-xs ${isDarkMode ? "bg-[#181b22] border-slate-800 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}
                   ></textarea>
                 </div>
                 <div className="flex gap-3 pt-2">
@@ -765,6 +797,7 @@ export default function AdminDashboard({
                       onClick={() => {
                         setEditingTestimonial(null);
                         resetTestiForm();
+                        setActiveTab("dashboard");
                       }}
                       className="px-5 py-3 bg-slate-700 text-white rounded-xl text-xs font-bold uppercase"
                     >
